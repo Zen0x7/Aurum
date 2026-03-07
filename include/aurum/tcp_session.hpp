@@ -28,7 +28,7 @@ namespace aurum {
     class state;
 
     /**
-     * Forward state
+     * Forward tcp_kernel
      */
     class tcp_kernel;
 
