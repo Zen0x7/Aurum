@@ -174,83 +174,21 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
         return;
     }
 
-    // Allocate the header plus payload buffer.
-    std::vector<uint8_t> _payload;
-
-    // Create a 16-bit integer representing the number of requests
-    std::uint16_t _requests_quantity_le = static_cast<std::uint16_t>(_requests_quantity);
-
-    // Convert the requests quantity to little endian format
-    boost::endian::native_to_little_inplace(_requests_quantity_le);
-
-    // Create a byte pointer to the little endian requests quantity
-    auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity_le);
-
-    // Insert the little endian requests quantity into the payload buffer
-    _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity_le));
+    // Target constraints pointer mappings variables arrays constraints.
+    aurum::protocol::frame_builder _frame_builder;
+    // Format variables loops limitations pointers constraints parameters bounds bounds sizes mappings properties loops limits variables bounds limits properly mappings.
+    auto _request_builder = _frame_builder.as_request();
+    // Prepare arrays loops mapped properly.
+    _request_builder.reserve(_requests_quantity);
 
     // Iterate through the number of requests
     for (size_t _index = 0; _index < _requests_quantity; ++_index) {
-        // Set the size of the request payload (1 byte opcode + 16 bytes transaction ID)
-        std::uint16_t _request_length = 17;
-
-        // Convert the request length to little endian format
-        boost::endian::native_to_little_inplace(_request_length);
-
-        // Create a byte pointer to the little endian request length
-        auto* _request_length_ptr = reinterpret_cast<const uint8_t*>(&_request_length);
-
-        // Insert the request length into the payload buffer
-        _payload.insert(_payload.end(), _request_length_ptr, _request_length_ptr + sizeof(_request_length));
+        // Build boundaries loops loops mappings constraints limits mappings boundaries properly mapped mapping limits sizes loops parameters mappings mappings bounds pointers boundaries mapping limits constraints parameters parameters.
+        _request_builder.add_ping();
     }
-
-    // Iterate through the number of requests
-    for (size_t _index = 0; _index < _requests_quantity; ++_index) {
-        // Append the operational code corresponding to ping (1)
-        _payload.push_back(ping);
-
-        // Generate a random 16 byte unique identifier for the transaction
-        boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
-
-        // Insert the generated transaction ID into the payload buffer
-        _payload.insert(_payload.end(), _transaction_id.begin(), _transaction_id.end());
-    }
-
-    // Create a CRC16-CCITT object to calculate the checksum
-    boost::crc_ccitt_type _crc;
-
-    // Calculate the CRC16-CCITT checksum for the constructed payload buffer
-    _crc.process_bytes(_payload.data(), _payload.size());
-
-    // Retrieve the calculated checksum as an unsigned 16-bit integer
-    std::uint16_t _crc_value = _crc.checksum();
-
-    // Convert the calculated checksum to little endian format
-    boost::endian::native_to_little_inplace(_crc_value);
-
-    // Create a byte pointer to the little endian checksum
-    auto* _crc_ptr = reinterpret_cast<const uint8_t*>(&_crc_value);
-
-    // Insert the checksum into the payload buffer
-    _payload.insert(_payload.end(), _crc_ptr, _crc_ptr + sizeof(_crc_value));
 
     // Allocate the full buffer
-    std::vector<uint8_t> _buffer;
-
-    // Calculate the total size of the frame's payload
-    uint32_t _header_length = static_cast<uint32_t>(_payload.size());
-
-    // Convert the calculated payload length into little endian format
-    boost::endian::native_to_little_inplace(_header_length);
-
-    // Create a byte pointer to the little endian payload length
-    auto* _header_ptr = reinterpret_cast<const uint8_t*>(&_header_length);
-
-    // Insert the header length into the frame buffer
-    _buffer.insert(_buffer.end(), _header_ptr, _header_ptr + sizeof(_header_length));
-
-    // Insert the payload containing the body of the requests into the frame buffer
-    _buffer.insert(_buffer.end(), _payload.begin(), _payload.end());
+    std::vector<uint8_t> _buffer = _request_builder.get_buffers();
 
     // Define tracker for accumulated outgoing written bytes
     size_t _total_bytes_written = 0;
