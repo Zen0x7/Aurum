@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/strand.hpp>
 #include <boost/uuid/uuid.hpp>
 
 namespace aurum {
@@ -95,6 +96,9 @@ namespace aurum {
 
         /** @brief The physical network socket object tied to this session. */
         boost::asio::ip::tcp::socket socket_;
+
+        /** @brief Sequential strand execution context for safe multithreaded operation. */
+        boost::asio::strand<boost::asio::any_io_executor> strand_;
 
         /** @brief Cached header value tracking the upcoming payload limits boundary. */
         std::uint32_t header_length_ { 0 };
