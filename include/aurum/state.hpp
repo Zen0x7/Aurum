@@ -18,9 +18,36 @@
 #define AURUM_STATE_HPP
 
 #include <memory>
+#include <shared_mutex>
+#include <unordered_map>
+#include <aurum/configuration.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_hash.hpp>
+#include <boost/container_hash/hash.hpp>
 
 namespace aurum {
+    class tcp_session;
+
+    using sessions_container_t = std::unordered_map<
+        boost::uuids::uuid,
+        std::shared_ptr<tcp_session>,
+        boost::hash<boost::uuids::uuid>
+    >;
+
     class state : public std::enable_shared_from_this<state> {
+        configuration configuration_;
+
+        sessions_container_t sessions_;
+        std::shared_mutex sessions_mutex_;
+
+    public:
+        configuration &get_configuration();
+
+        sessions_container_t &get_sessions();
+
+        bool add_session(std::shared_ptr<tcp_session> session);
+
+        bool remove_session(boost::uuids::uuid id);
     };
 }
 

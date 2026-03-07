@@ -14,25 +14,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#include <aurum/state.hpp>
+#ifndef AURUM_TCP_LISTENER_HPP
+#define AURUM_TCP_LISTENER_HPP
 
-#include <aurum/tcp_session.hpp>
+#include <boost/asio/ip/tcp.hpp>
 
 namespace aurum {
-    configuration & state::get_configuration() { return configuration_; }
+    class state;
 
-    sessions_container_t & state::get_sessions() {
-        return sessions_;
-    }
+    class tcp_listener {
+        std::shared_ptr<state> state_;
+    public:
+        tcp_listener(boost::asio::io_context &io_context, std::shared_ptr<state> state);
 
-    bool state::add_session(std::shared_ptr<tcp_session> session) {
-        std::unique_lock _lock(sessions_mutex_);
-        auto [_, _inserted] = sessions_.insert({session->get_id(), std::move(session)});
-        return _inserted;
-    }
+        std::shared_ptr<state> & get_state();
 
-    bool state::remove_session(const boost::uuids::uuid id) {
-        std::unique_lock _lock(sessions_mutex_);
-        return sessions_.erase(id) == 1;
-    }
+        void start();
+    private:
+        void do_accept();
+
+        boost::asio::ip::tcp::acceptor acceptor_;
+        boost::asio::ip::tcp::socket socket_;
+    };
 }
+
+#endif // AURUM_TCP_LISTENER_HPP

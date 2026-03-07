@@ -14,25 +14,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#include <aurum/state.hpp>
+#include <aurum/tcp_kernel.hpp>
 
-#include <aurum/tcp_session.hpp>
+#include <aurum/state.hpp>
+#include <iostream>
 
 namespace aurum {
-    configuration & state::get_configuration() { return configuration_; }
+    tcp_kernel::tcp_kernel(std::shared_ptr<state> state) : state_(std::move(state)) {
 
-    sessions_container_t & state::get_sessions() {
-        return sessions_;
     }
 
-    bool state::add_session(std::shared_ptr<tcp_session> session) {
-        std::unique_lock _lock(sessions_mutex_);
-        auto [_, _inserted] = sessions_.insert({session->get_id(), std::move(session)});
-        return _inserted;
-    }
+    void tcp_kernel::handle(const std::shared_ptr<std::vector<std::uint8_t>> &frame) {
+        for (const std::uint8_t b : *frame) {
+            std::cout << std::hex
+                      << std::setw(2)
+                      << std::setfill('0')
+                      << static_cast<unsigned>(b)
+                      << ' ';
+        }
 
-    bool state::remove_session(const boost::uuids::uuid id) {
-        std::unique_lock _lock(sessions_mutex_);
-        return sessions_.erase(id) == 1;
+        std::cout << std::dec << '\n';
     }
 }

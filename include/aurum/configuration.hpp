@@ -14,25 +14,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#include <aurum/state.hpp>
+#ifndef AURUM_CONFIGURATION_HPP
+#define AURUM_CONFIGURATION_HPP
 
-#include <aurum/tcp_session.hpp>
+#include <atomic>
 
 namespace aurum {
-    configuration & state::get_configuration() { return configuration_; }
-
-    sessions_container_t & state::get_sessions() {
-        return sessions_;
-    }
-
-    bool state::add_session(std::shared_ptr<tcp_session> session) {
-        std::unique_lock _lock(sessions_mutex_);
-        auto [_, _inserted] = sessions_.insert({session->get_id(), std::move(session)});
-        return _inserted;
-    }
-
-    bool state::remove_session(const boost::uuids::uuid id) {
-        std::unique_lock _lock(sessions_mutex_);
-        return sessions_.erase(id) == 1;
-    }
+    struct configuration {
+      std::atomic<std::size_t> threads_ {1};
+      std::atomic<unsigned short> tcp_port_{0};
+      std::atomic<bool> tcp_ready_{false};
+    };
 }
+
+#endif // AURUM_CONFIGURATION_HPP

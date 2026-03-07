@@ -24,6 +24,7 @@ find_package(Boost 1.90.0 REQUIRED COMPONENTS json program_options charconv)
 
 include_directories(include)
 include(FetchContent)
+file(GLOB_RECURSE AURUM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 if(BUILD_TESTS)
     FetchContent_Declare(
@@ -37,11 +38,11 @@ if(BUILD_TESTS)
     enable_testing()
     file(GLOB_RECURSE AURUM_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cc")
 
-    add_executable(tests ${AURUM_TESTS})
-    target_link_libraries(tests PRIVATE GTest::gtest_main)
+    add_executable(tests ${AURUM_TESTS} ${AURUM_SOURCES})
+    target_link_libraries(tests PRIVATE GTest::gtest_main ${Boost_LIBRARIES})
     target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     gtest_discover_tests(tests)
 endif ()
 
-file(GLOB_RECURSE AURUM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_executable(aurum main.cpp ${AURUM_SOURCES})
+target_link_libraries(aurum ${Boost_LIBRARIES})
