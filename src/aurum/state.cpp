@@ -18,7 +18,31 @@
 
 #include <aurum/tcp_session.hpp>
 
+#include <cstring>
+
 namespace aurum {
+    state::state() {
+        handler_type _non_implemented = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
+            callback_return_type _response(17);
+            std::memcpy(_response.data(), _transaction_id.data, 16);
+            _response[16] = 0; // Exit code 0 for non-implemented
+            return _response;
+        };
+
+        handlers_.fill(_non_implemented);
+
+        handlers_[1] = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
+            callback_return_type _response(17);
+            std::memcpy(_response.data(), _transaction_id.data, 16);
+            _response[16] = 200; // Exit code 200 for ping (success)
+            return _response;
+        };
+    }
+
+    const std::array<handler_type, 256>& state::get_handlers() const {
+        return handlers_;
+    }
+
     configuration & state::get_configuration() { return configuration_; }
 
     sessions_container_t & state::get_sessions() {

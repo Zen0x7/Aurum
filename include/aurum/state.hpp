@@ -24,9 +24,21 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_hash.hpp>
 #include <boost/container_hash/hash.hpp>
+#include <vector>
+#include <span>
+#include <functional>
+#include <array>
 
 namespace aurum {
     class tcp_session;
+    class state;
+
+    using callback_return_type = std::vector<std::uint8_t>;
+    using transaction_id = boost::uuids::uuid;
+    using payload_buffer = std::span<const std::uint8_t>;
+    using shared_tcp_session = std::shared_ptr<tcp_session>;
+    using shared_state = std::shared_ptr<state>;
+    using handler_type = std::function<callback_return_type(const transaction_id&, payload_buffer, shared_tcp_session, shared_state)>;
 
     using sessions_container_t = std::unordered_map<
         boost::uuids::uuid,
@@ -40,7 +52,13 @@ namespace aurum {
         sessions_container_t sessions_;
         std::shared_mutex sessions_mutex_;
 
+        std::array<handler_type, 256> handlers_;
+
     public:
+        state();
+
+        const std::array<handler_type, 256>& get_handlers() const;
+
         configuration &get_configuration();
 
         sessions_container_t &get_sessions();
