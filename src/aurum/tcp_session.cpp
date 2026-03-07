@@ -150,8 +150,8 @@ namespace aurum {
                    [this, _self](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
                        // Suppress the unused variable warning for transferred byte count.
                        boost::ignore_unused(bytes_transferred);
-                       // Convert the received 4 bytes from big-endian back to the host architecture format.
-                       boost::endian::big_to_native_inplace(header_length_);
+                       // Convert the received 4 bytes from little-endian back to the host architecture format.
+                       boost::endian::little_to_native_inplace(header_length_);
 
                        // Ensure that no network issues occurred during the read block.
                        if (!error_code) {

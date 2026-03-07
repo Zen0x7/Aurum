@@ -51,7 +51,7 @@ namespace aurum {
         std::memcpy(&_expected_crc, frame->data() + frame->size() - 2, sizeof(_expected_crc));
 
         // Ensure conversion back targeting native hardware format
-        boost::endian::big_to_native_inplace(_expected_crc);
+        boost::endian::little_to_native_inplace(_expected_crc);
 
         // Cross-validate checksums avoiding payloads tampering scenarios
         if (_crc.checksum() != _expected_crc) {
@@ -74,8 +74,8 @@ namespace aurum {
         // Map payload target into specific mapping structure
         std::memcpy(&_number_of_requests, frame->data() + _offset, sizeof(_number_of_requests));
 
-        // Reverse swap big endian architecture network array encoding to natively
-        boost::endian::big_to_native_inplace(_number_of_requests);
+        // Reverse swap little endian architecture network array encoding to natively
+        boost::endian::little_to_native_inplace(_number_of_requests);
 
         // Advance payload size token forward dynamically
         _offset += sizeof(std::uint16_t);
@@ -101,7 +101,7 @@ namespace aurum {
             std::memcpy(&_n_request_length, frame->data() + _offset, sizeof(_n_request_length));
 
             // Format incoming mapping mapping standard
-            boost::endian::big_to_native_inplace(_n_request_length);
+            boost::endian::little_to_native_inplace(_n_request_length);
 
             // Target output memory boundary mappings array sequentially
             _requests_lengths.push_back(_n_request_length);
@@ -174,45 +174,45 @@ namespace aurum {
         _response_frame->reserve(sizeof(std::uint32_t) + _total_body_size);
 
         // Wrap data boundary maps limit size boundary boundaries lengths maps properly
-        std::uint32_t _header_size_be = _total_body_size;
+        std::uint32_t _header_size_le = _total_body_size;
 
-        // Correct big endian mapping architecture map boundaries structures mappings
-        boost::endian::native_to_big_inplace(_header_size_be);
+        // Correct little endian mapping architecture map boundaries structures mappings
+        boost::endian::native_to_little_inplace(_header_size_le);
 
         // Prepare cast mapped pointer wrapper maps boundaries bounds limits parameter lengths map variables
-        auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_be);
+        auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_le);
 
         // Output headers mapping pointers properly map lengths boundaries structures limits map elements
-        _response_frame->insert(_response_frame->end(), _header_ptr, _header_ptr + sizeof(_header_size_be));
+        _response_frame->insert(_response_frame->end(), _header_ptr, _header_ptr + sizeof(_header_size_le));
 
         // Locate tail mappings boundaries variables mappings length sizes limits bounds limits properly
         std::size_t _crc_start_offset = _response_frame->size();
 
         // Convert the responses quantity to a 16-bit integer
-        std::uint16_t _responses_quantity_be = static_cast<std::uint16_t>(_responses.size());
+        std::uint16_t _responses_quantity_le = static_cast<std::uint16_t>(_responses.size());
 
-        // Convert the responses quantity to big endian
-        boost::endian::native_to_big_inplace(_responses_quantity_be);
+        // Convert the responses quantity to little endian
+        boost::endian::native_to_little_inplace(_responses_quantity_le);
 
-        // Create a byte pointer to the big endian responses quantity
-        auto* _responses_quantity_ptr = reinterpret_cast<const std::uint8_t*>(&_responses_quantity_be);
+        // Create a byte pointer to the little endian responses quantity
+        auto* _responses_quantity_ptr = reinterpret_cast<const std::uint8_t*>(&_responses_quantity_le);
 
         // Insert the responses quantity into the response frame
-        _response_frame->insert(_response_frame->end(), _responses_quantity_ptr, _responses_quantity_ptr + sizeof(_responses_quantity_be));
+        _response_frame->insert(_response_frame->end(), _responses_quantity_ptr, _responses_quantity_ptr + sizeof(_responses_quantity_le));
 
         // Iterate through each response to insert its length
         for (const auto& _resp : _responses) {
             // Get the size of the response as a 16-bit integer
-            std::uint16_t _resp_len_be = static_cast<std::uint16_t>(_resp.size());
+            std::uint16_t _resp_len_le = static_cast<std::uint16_t>(_resp.size());
 
-            // Convert the response length to big endian
-            boost::endian::native_to_big_inplace(_resp_len_be);
+            // Convert the response length to little endian
+            boost::endian::native_to_little_inplace(_resp_len_le);
 
-            // Create a byte pointer to the big endian response length
-            auto* _response_length_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_len_be);
+            // Create a byte pointer to the little endian response length
+            auto* _response_length_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_len_le);
 
             // Insert the response length into the response frame
-            _response_frame->insert(_response_frame->end(), _response_length_ptr, _response_length_ptr + sizeof(_resp_len_be));
+            _response_frame->insert(_response_frame->end(), _response_length_ptr, _response_length_ptr + sizeof(_resp_len_le));
         }
 
         // Iterate through each response to insert its payload
@@ -230,10 +230,10 @@ namespace aurum {
         // Get the calculated CRC16 value
         std::uint16_t _resp_crc_val = _resp_crc.checksum();
 
-        // Convert the CRC16 value to big endian
-        boost::endian::native_to_big_inplace(_resp_crc_val);
+        // Convert the CRC16 value to little endian
+        boost::endian::native_to_little_inplace(_resp_crc_val);
 
-        // Create a byte pointer to the big endian CRC16 value
+        // Create a byte pointer to the little endian CRC16 value
         auto* _resp_crc_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_crc_val);
 
         // Insert the CRC16 value into the response frame
