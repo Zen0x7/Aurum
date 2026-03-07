@@ -36,73 +36,127 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
 
     ASSERT_EQ(state->get_sessions().size(), 1);
 
-    // Build Ping Frame
-    std::vector<uint8_t> payload;
+    // Declare the payload buffer array
+    std::vector<uint8_t> _payload;
 
-    // requests_quantity (1)
-    std::uint16_t requests_qty = 1;
-    boost::endian::native_to_big_inplace(requests_qty);
-    auto* qty_ptr = reinterpret_cast<const uint8_t*>(&requests_qty);
-    payload.insert(payload.end(), qty_ptr, qty_ptr + sizeof(requests_qty));
+    // Set the amount of requests inside the frame, in this case 1
+    std::uint16_t _requests_quantity = 1;
 
-    // request_length (1 + 16 = 17 bytes)
-    std::uint16_t req_len = 17;
-    boost::endian::native_to_big_inplace(req_len);
-    auto* len_ptr = reinterpret_cast<const uint8_t*>(&req_len);
-    payload.insert(payload.end(), len_ptr, len_ptr + sizeof(req_len));
+    // Convert to big endian the quantity
+    boost::endian::native_to_big_inplace(_requests_quantity);
 
-    // opcode (1)
-    payload.push_back(1);
+    // Cast a byte pointer pointing to the native variable address to copy it
+    auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity);
 
-    // transaction_id (16 bytes)
-    boost::uuids::uuid tx_id = boost::uuids::random_generator()();
-    payload.insert(payload.end(), tx_id.begin(), tx_id.end());
+    // Insert the big endian payload size element into the buffer
+    _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity));
 
-    // crc16
-    boost::crc_ccitt_type crc;
-    crc.process_bytes(payload.data(), payload.size());
-    std::uint16_t crc_val = crc.checksum();
-    boost::endian::native_to_big_inplace(crc_val);
-    auto* crc_ptr = reinterpret_cast<const uint8_t*>(&crc_val);
-    payload.insert(payload.end(), crc_ptr, crc_ptr + sizeof(crc_val));
+    // Define the request length byte size limit constraint (1 byte opcode + 16 byte uuid)
+    std::uint16_t _request_length = 17;
 
-    // Send header + payload
-    uint32_t header = payload.size();
-    boost::endian::native_to_big_inplace(header);
+    // Enforce big endian representation to format the length chunk
+    boost::endian::native_to_big_inplace(_request_length);
 
-    boost::asio::write(socket, boost::asio::buffer(&header, sizeof(header)));
-    boost::asio::write(socket, boost::asio::buffer(payload));
+    // Convert integer into bytes pointer
+    auto* _request_length_ptr = reinterpret_cast<const uint8_t*>(&_request_length);
 
-    // Read response header
-    uint32_t resp_header = 0;
-    boost::asio::read(socket, boost::asio::buffer(&resp_header, sizeof(resp_header)));
-    boost::endian::big_to_native_inplace(resp_header);
+    // Append the request size component into the body stream
+    _payload.insert(_payload.end(), _request_length_ptr, _request_length_ptr + sizeof(_request_length));
 
-    // Read response body
-    std::vector<uint8_t> resp_body(resp_header);
-    boost::asio::read(socket, boost::asio::buffer(resp_body));
+    // Push explicitly the ping operational code (1) at the first byte
+    _payload.push_back(1);
 
-    // Verify response
-    ASSERT_GE(resp_body.size(), 4); // at least qty + crc
+    // Create a new transactional uniform identifier string
+    boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
-    std::uint16_t resp_qty;
-    std::memcpy(&resp_qty, resp_body.data(), sizeof(resp_qty));
-    boost::endian::big_to_native_inplace(resp_qty);
-    ASSERT_EQ(resp_qty, 1);
+    // Include the generated identifier segment
+    _payload.insert(_payload.end(), _transaction_id.begin(), _transaction_id.end());
 
-    std::uint16_t resp_len;
-    std::memcpy(&resp_len, resp_body.data() + 2, sizeof(resp_len));
-    boost::endian::big_to_native_inplace(resp_len);
-    ASSERT_EQ(resp_len, 17);
+    // Allocate CCITT type CRC16 engine checker to protect integrity
+    boost::crc_ccitt_type _crc;
 
-    // Check transaction id
-    boost::uuids::uuid resp_tx_id;
-    std::memcpy(resp_tx_id.data, resp_body.data() + 4, 16);
-    ASSERT_EQ(tx_id, resp_tx_id);
+    // Update inner bytes context to generate matching CRC sequence
+    _crc.process_bytes(_payload.data(), _payload.size());
 
-    // Check exit code
-    ASSERT_EQ(resp_body[20], 200);
+    // Pull resulting computed value representing checksum target
+    std::uint16_t _crc_value = _crc.checksum();
 
+    // Overwrite the actual local variable format into big endian structure
+    boost::endian::native_to_big_inplace(_crc_value);
+
+    // Build memory mapped alias over crc value
+    auto* _crc_ptr = reinterpret_cast<const uint8_t*>(&_crc_value);
+
+    // Safely dump tail bytes acting as integrity token wrapper
+    _payload.insert(_payload.end(), _crc_ptr, _crc_ptr + sizeof(_crc_value));
+
+    // Define length limit for the full internal body wrapper payload
+    uint32_t _header_length = _payload.size();
+
+    // Endianness swap towards big to properly encode frame limit bound
+    boost::endian::native_to_big_inplace(_header_length);
+
+    // Write outgoing size limit through TCP endpoint layer
+    boost::asio::write(socket, boost::asio::buffer(&_header_length, sizeof(_header_length)));
+
+    // Dump actual serialized payload through TCP sequence pipeline
+    boost::asio::write(socket, boost::asio::buffer(_payload));
+
+    // Declare placeholder buffer integer for received server bound wrapper length
+    uint32_t _response_header_length = 0;
+
+    // Trigger socket bound sync read routine parsing frame limits explicitly
+    boost::asio::read(socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
+
+    // Reformat input stream bounds representation to little endian parsing
+    boost::endian::big_to_native_inplace(_response_header_length);
+
+    // Prepare receiving target dynamic array based off received length boundary
+    std::vector<uint8_t> _response_body(_response_header_length);
+
+    // Flush rest of the network stream frame sequence down towards local buffer space
+    boost::asio::read(socket, boost::asio::buffer(_response_body));
+
+    // Assure frame constraints limits hold valid minimum bounds limits rules
+    ASSERT_GE(_response_body.size(), 4); // at least qty + crc
+
+    // Declare quantity received placeholder tracker
+    std::uint16_t _response_quantity;
+
+    // Deep copy header structure bytes back mapping primitive properties
+    std::memcpy(&_response_quantity, _response_body.data(), sizeof(_response_quantity));
+
+    // Adapt back input array sequence mapping towards correct host primitive
+    boost::endian::big_to_native_inplace(_response_quantity);
+
+    // Compare structural output enforcing ping single return size bounds
+    ASSERT_EQ(_response_quantity, 1);
+
+    // Declare length parameter to capture response specific element length limit
+    std::uint16_t _response_length;
+
+    // Transfer mapping copying memory segment representation directly
+    std::memcpy(&_response_length, _response_body.data() + 2, sizeof(_response_length));
+
+    // Correct memory formatting for native little endian processing unit architectures
+    boost::endian::big_to_native_inplace(_response_length);
+
+    // Ping length bounds expected explicitly sized to ID (16) and Exit (1) = 17
+    ASSERT_EQ(_response_length, 17);
+
+    // Create destination parsing uuid object structure representing transaction bound matching
+    boost::uuids::uuid _response_transaction_id;
+
+    // Restore raw memory copying bytes sequentially mapping representation boundaries
+    std::memcpy(_response_transaction_id.data, _response_body.data() + 4, 16);
+
+    // Cross-validate that returned ID exactly equals source request tracking token element
+    ASSERT_EQ(_transaction_id, _response_transaction_id);
+
+    // Assure that expected successful command operations properly log status mapping bound variable flag
+    ASSERT_EQ(_response_body[20], 200);
+
+    // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
     socket.close();
 
     wait_until([this] {
