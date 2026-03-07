@@ -22,14 +22,36 @@
 #include <bits/stl_vector.h>
 
 namespace aurum {
+    /**
+     * Forward state
+     */
     class state;
+
+    /**
+     * Forward tcp_session
+     */
     class tcp_session;
 
+    /**
+     * @brief Protocol parsing kernel responsible for extracting requests from raw TCP frames.
+     * @details Parses binary buffers, validates CRC checksums, and routes opcodes to the state handlers.
+     */
     class tcp_kernel {
+        /** @brief Shared reference to the central application state. */
         std::shared_ptr<state> state_;
     public:
+        /**
+         * @brief Constructs a new TCP kernel component linked to the global state.
+         * @param state A shared pointer to the active application state.
+         */
         explicit tcp_kernel(std::shared_ptr<state> state);
 
+        /**
+         * @brief Parses and handles an incoming binary frame buffer.
+         * @param frame A shared pointer containing the raw byte array of the network frame.
+         * @param session A shared pointer referencing the origin TCP session.
+         * @return A shared pointer to an allocated response buffer vector, or nullptr if parsing fails.
+         */
         std::shared_ptr<const std::vector<std::uint8_t>> handle(
             const std::shared_ptr<std::vector<std::uint8_t>> & frame,
             std::shared_ptr<tcp_session> session);

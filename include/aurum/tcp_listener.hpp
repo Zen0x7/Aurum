@@ -20,20 +20,46 @@
 #include <boost/asio/ip/tcp.hpp>
 
 namespace aurum {
+    /**
+     * Forward state
+     */
     class state;
 
+    /**
+     * @brief Asynchronous TCP server listener managing incoming client connections.
+     * @details Opens a server socket, accepts incoming connections, and spawns new tcp_session instances.
+     */
     class tcp_listener {
+        /** @brief Shared pointer to the central application state. */
         std::shared_ptr<state> state_;
     public:
+        /**
+         * @brief Constructs a new TCP listener bounded to the specified IO context and port.
+         * @param io_context The Boost Asio execution context.
+         * @param state A shared pointer to the application state containing configuration details.
+         */
         tcp_listener(boost::asio::io_context &io_context, std::shared_ptr<state> state);
 
+        /**
+         * @brief Retrieves the application state reference held by the listener.
+         * @return A mutable reference to the shared state pointer.
+         */
         std::shared_ptr<state> & get_state();
 
+        /**
+         * @brief Starts the asynchronous connection acceptance loop.
+         */
         void start();
     private:
+        /**
+         * @brief Internal method performing the asynchronous accept operation.
+         */
         void do_accept();
 
+        /** @brief The Boost Asio acceptor used to listen for incoming connections. */
         boost::asio::ip::tcp::acceptor acceptor_;
+
+        /** @brief A temporary socket object to hold incoming connections before passing to a session. */
         boost::asio::ip::tcp::socket socket_;
     };
 }
