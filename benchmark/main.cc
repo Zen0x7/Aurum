@@ -128,9 +128,9 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
     // Allocate the header plus payload buffer entirely.
     std::vector<uint8_t> _buffer(sizeof(uint32_t) + _payload_size);
 
-    // Set header length directly to vector (Big Endian 4-bytes).
+    // Set header length directly to vector (Little Endian 4-bytes).
     uint32_t _header_length = static_cast<uint32_t>(_payload_size);
-    boost::endian::native_to_big_inplace(_header_length);
+    boost::endian::native_to_little_inplace(_header_length);
     std::memcpy(_buffer.data(), &_header_length, sizeof(uint32_t));
 
     // Fill body with dummy repeating data.
@@ -178,26 +178,26 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     std::vector<uint8_t> _payload;
 
     // Create a 16-bit integer representing the number of requests
-    std::uint16_t _requests_quantity_be = static_cast<std::uint16_t>(_requests_quantity);
+    std::uint16_t _requests_quantity_le = static_cast<std::uint16_t>(_requests_quantity);
 
-    // Convert the requests quantity to big endian format
-    boost::endian::native_to_big_inplace(_requests_quantity_be);
+    // Convert the requests quantity to little endian format
+    boost::endian::native_to_little_inplace(_requests_quantity_le);
 
-    // Create a byte pointer to the big endian requests quantity
-    auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity_be);
+    // Create a byte pointer to the little endian requests quantity
+    auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity_le);
 
-    // Insert the big endian requests quantity into the payload buffer
-    _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity_be));
+    // Insert the little endian requests quantity into the payload buffer
+    _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity_le));
 
     // Iterate through the number of requests
     for (size_t _index = 0; _index < _requests_quantity; ++_index) {
         // Set the size of the request payload (1 byte opcode + 16 bytes transaction ID)
         std::uint16_t _request_length = 17;
 
-        // Convert the request length to big endian format
-        boost::endian::native_to_big_inplace(_request_length);
+        // Convert the request length to little endian format
+        boost::endian::native_to_little_inplace(_request_length);
 
-        // Create a byte pointer to the big endian request length
+        // Create a byte pointer to the little endian request length
         auto* _request_length_ptr = reinterpret_cast<const uint8_t*>(&_request_length);
 
         // Insert the request length into the payload buffer
@@ -225,10 +225,10 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     // Retrieve the calculated checksum as an unsigned 16-bit integer
     std::uint16_t _crc_value = _crc.checksum();
 
-    // Convert the calculated checksum to big endian format
-    boost::endian::native_to_big_inplace(_crc_value);
+    // Convert the calculated checksum to little endian format
+    boost::endian::native_to_little_inplace(_crc_value);
 
-    // Create a byte pointer to the big endian checksum
+    // Create a byte pointer to the little endian checksum
     auto* _crc_ptr = reinterpret_cast<const uint8_t*>(&_crc_value);
 
     // Insert the checksum into the payload buffer
@@ -240,10 +240,10 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     // Calculate the total size of the frame's payload
     uint32_t _header_length = static_cast<uint32_t>(_payload.size());
 
-    // Convert the calculated payload length into big endian format
-    boost::endian::native_to_big_inplace(_header_length);
+    // Convert the calculated payload length into little endian format
+    boost::endian::native_to_little_inplace(_header_length);
 
-    // Create a byte pointer to the big endian payload length
+    // Create a byte pointer to the little endian payload length
     auto* _header_ptr = reinterpret_cast<const uint8_t*>(&_header_length);
 
     // Insert the header length into the frame buffer
@@ -287,7 +287,7 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
         state.PauseTiming();
 
         // Parse and restore the response header to native endianness format
-        boost::endian::big_to_native_inplace(_response_header_length);
+        boost::endian::little_to_native_inplace(_response_header_length);
 
         // Prepare an adequate size binary buffer vector for accommodating the response body
         std::vector<uint8_t> _response_body(_response_header_length);

@@ -43,20 +43,20 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Set the amount of requests inside the frame, in this case 1
     std::uint16_t _requests_quantity = 1;
 
-    // Convert to big endian the quantity
-    boost::endian::native_to_big_inplace(_requests_quantity);
+    // Convert to little endian the quantity
+    boost::endian::native_to_little_inplace(_requests_quantity);
 
     // Cast a byte pointer pointing to the native variable address to copy it
     auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity);
 
-    // Insert the big endian payload size element into the buffer
+    // Insert the little endian payload size element into the buffer
     _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity));
 
     // Define the request length byte size limit constraint (1 byte opcode + 16 byte uuid)
     std::uint16_t _request_length = 17;
 
-    // Enforce big endian representation to format the length chunk
-    boost::endian::native_to_big_inplace(_request_length);
+    // Enforce little endian representation to format the length chunk
+    boost::endian::native_to_little_inplace(_request_length);
 
     // Convert integer into bytes pointer
     auto* _request_length_ptr = reinterpret_cast<const uint8_t*>(&_request_length);
@@ -82,8 +82,8 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Pull resulting computed value representing checksum target
     std::uint16_t _crc_value = _crc.checksum();
 
-    // Overwrite the actual local variable format into big endian structure
-    boost::endian::native_to_big_inplace(_crc_value);
+    // Overwrite the actual local variable format into little endian structure
+    boost::endian::native_to_little_inplace(_crc_value);
 
     // Build memory mapped alias over crc value
     auto* _crc_ptr = reinterpret_cast<const uint8_t*>(&_crc_value);
@@ -94,8 +94,8 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Define length limit for the full internal body wrapper payload
     uint32_t _header_length = _payload.size();
 
-    // Endianness swap towards big to properly encode frame limit bound
-    boost::endian::native_to_big_inplace(_header_length);
+    // Endianness swap towards little to properly encode frame limit bound
+    boost::endian::native_to_little_inplace(_header_length);
 
     // Write outgoing size limit through TCP endpoint layer
     boost::asio::write(socket, boost::asio::buffer(&_header_length, sizeof(_header_length)));
@@ -110,7 +110,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     boost::asio::read(socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
 
     // Reformat input stream bounds representation to little endian parsing
-    boost::endian::big_to_native_inplace(_response_header_length);
+    boost::endian::little_to_native_inplace(_response_header_length);
 
     // Prepare receiving target dynamic array based off received length boundary
     std::vector<uint8_t> _response_body(_response_header_length);
@@ -128,7 +128,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     std::memcpy(&_response_quantity, _response_body.data(), sizeof(_response_quantity));
 
     // Adapt back input array sequence mapping towards correct host primitive
-    boost::endian::big_to_native_inplace(_response_quantity);
+    boost::endian::little_to_native_inplace(_response_quantity);
 
     // Compare structural output enforcing ping single return size bounds
     ASSERT_EQ(_response_quantity, 1);
@@ -140,7 +140,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     std::memcpy(&_response_length, _response_body.data() + 2, sizeof(_response_length));
 
     // Correct memory formatting for native little endian processing unit architectures
-    boost::endian::big_to_native_inplace(_response_length);
+    boost::endian::little_to_native_inplace(_response_length);
 
     // Ping length bounds expected explicitly sized to ID (16) and Exit (1) = 17
     ASSERT_EQ(_response_length, 17);
