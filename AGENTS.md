@@ -89,10 +89,10 @@ Operational Block: After sending the questions, suspend modifications and wait f
 ## 4. Sandbox Environment, Build, and Cleanup
 
 ### 4.1. Build Isolation (`build/` Directory)
-All compilation and test execution processes **must** be executed within `build/`.
+All compilation and test execution processes **must** be executed within `build/`. By default, benchmarks are disabled to prevent you from getting stuck running heavy processes. **Only enable `-DBUILD_BENCHMARK=ON` if the user explicitly asks you to provide or compile benchmarks.**
 ```bash
 mkdir -p build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DBUILD_BENCHMARK=ON
+cmake .. -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON -DBUILD_BENCHMARK=OFF
 make -j$(nproc)
 ```
 
@@ -144,7 +144,7 @@ All code (names, classes, logic) and **all documentation (Doxygen, line-by-line 
 ## 7. Unit Tests and Benchmarks
 
 - **Mandatory:** Every feature, fix, or method requires its respective test in `tests/` (GTest).
-- **Performance Isolation:** For critical components (parsers, queues, atomic structures) it is mandatory to provide benchmarks in `benchmark/` (GBenchmark) measuring bytes/op per second.
+- **Performance Isolation:** For critical components (parsers, queues, atomic structures) it is mandatory to provide benchmarks in `benchmark/` (GBenchmark) measuring bytes/op per second. **However, do NOT execute benchmarks by default.** When requested to write benchmarks, you should activate the CMake flag (`-DBUILD_BENCHMARK=ON`) and compile them, but never run the benchmark binaries to avoid hanging or timeout errors, unless specifically instructed by the user to execute them.
 
 ---
 
@@ -162,7 +162,7 @@ To consider a task completed, these rules must be religiously fulfilled:
 2. **Implementation:** Code without shortcuts, clean sandbox.
 3. **C++ Format:** `snake_case`, prefixes (`_local`), suffixes (`member_`), in English, **line-by-line micro-documentation**, and signatures with `Doxygen`.
 4. **Memory:** Use of `const`, `std::move`, and smart pointers. Prohibited raw pointers and `new`.
-5. **Stability:** Tests and benchmarks executed in `build/` without compilation errors or warnings.
+5. **Stability:** Tests compiled and executed successfully in `build/` without errors or warnings. Benchmarks must only be compiled (if requested) but their execution is optional and conditional on user request.
 6. **Anti-Stuck Protocol:** If you failed, you packaged the defective code and explicitly requested help.
 
 ---
