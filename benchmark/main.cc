@@ -28,6 +28,7 @@
 #include <boost/crc.hpp>
 
 #include <thread>
+#include <aurum/protocol/op_code.hpp>
 
 using namespace aurum;
 
@@ -206,7 +207,7 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     // Iterate through the number of requests
     for (size_t _index = 0; _index < _requests_quantity; ++_index) {
         // Append the operational code corresponding to ping (1)
-        _payload.push_back(1);
+        _payload.push_back(ping);
 
         // Generate a random 16 byte unique identifier for the transaction
         boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
