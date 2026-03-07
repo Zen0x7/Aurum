@@ -136,13 +136,16 @@ namespace aurum {
         auto* _qty_ptr = reinterpret_cast<const std::uint8_t*>(&_responses_quantity_be);
         _response_frame->insert(_response_frame->end(), _qty_ptr, _qty_ptr + sizeof(_responses_quantity_be));
 
-        // Each response length + payload
+        // Each response length
         for (const auto& _resp : _responses) {
             std::uint16_t _resp_len_be = static_cast<std::uint16_t>(_resp.size());
             boost::endian::native_to_big_inplace(_resp_len_be);
             auto* _len_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_len_be);
             _response_frame->insert(_response_frame->end(), _len_ptr, _len_ptr + sizeof(_resp_len_be));
+        }
 
+        // Each response payload
+        for (const auto& _resp : _responses) {
             _response_frame->insert(_response_frame->end(), _resp.begin(), _resp.end());
         }
 

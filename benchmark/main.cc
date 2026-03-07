@@ -182,14 +182,16 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     auto* qty_ptr = reinterpret_cast<const uint8_t*>(&req_qty_be);
     _payload.insert(_payload.end(), qty_ptr, qty_ptr + sizeof(req_qty_be));
 
-    // build request bodies
+    // each request length (1 + 16 = 17 bytes)
     for (size_t i = 0; i < _requests_quantity; ++i) {
-        // request_length (1 + 16 = 17 bytes)
         std::uint16_t req_len = 17;
         boost::endian::native_to_big_inplace(req_len);
         auto* len_ptr = reinterpret_cast<const uint8_t*>(&req_len);
         _payload.insert(_payload.end(), len_ptr, len_ptr + sizeof(req_len));
+    }
 
+    // each request payload
+    for (size_t i = 0; i < _requests_quantity; ++i) {
         // opcode (1)
         _payload.push_back(1);
 
