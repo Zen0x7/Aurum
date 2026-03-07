@@ -51,35 +51,34 @@ namespace aurum::protocol {
             return {};
         }
 
-        // Initialize variables tracking chunks splitting logic parameters.
+        // Initialize the output buffer where the serialized frames will be written.
         std::vector<std::uint8_t> _output_buffer;
 
-        // Define maximum bounds parameters limiting single payload sizing bounds parameters limits constraints.
+        // Define maximum allowed requests in a single frame payload (fits in 16-bit uint).
         constexpr std::size_t _max_requests_per_frame = 65535; // std::numeric_limits<std::uint16_t>::max()
-        // Define maximum frame boundary payload sizes limit boundaries values limits parameters.
+        // Define maximum frame payload size to avoid integer overflow issues during transmission.
         constexpr std::size_t _max_frame_payload_size = 4294967295 - 131078; // theoretical max limit avoiding overflows.
-        // Restrict safely boundaries parameters lengths.
 
-        // Initialize index parameter limiting looping bounds variables mapped properly mapped bounds.
+        // Track the current payload being processed.
         std::size_t _current_index = 0;
-        // Evaluate dynamic list sizes array constraints mapping variables parameters.
+        // Store total number of payloads in the local buffer array.
         std::size_t _total_requests = buffers_.size();
 
-        // Dynamically compute frame chunk mapping limits evaluating limits bounds bounds mapping properties mappings parameters properly mapping sizes arrays limitations arrays parameters mapped.
+        // Process all pending payloads creating frame chunks if required by limits.
         while (_current_index < _total_requests) {
-            // Count number limits map bounds sizes arrays loops length constraints map parameters lengths variables maps.
+            // Count how many individual payloads are included in this specific chunk.
             std::size_t _requests_in_frame = 0;
-            // Size limit mappings size boundaries arrays limits variables bounds pointers pointers properly.
+            // Accumulate total raw byte size for this chunk payload data.
             std::size_t _frame_payload_size = 0;
-            // Index limits boundaries sizing map mapping pointers arrays mappings pointers mapped limits bounds sizes maps pointers values limitations variables.
+            // Record the starting payload index for the current chunk evaluation.
             std::size_t _start_index = _current_index;
 
-            // Iterate identifying map bounds properties limiting constraints loops mapping pointer arrays sizes parameters limits.
+            // Iterate over remaining payloads validating size limits per chunk.
             while (_current_index < _total_requests && _requests_in_frame < _max_requests_per_frame) {
-                // Size mappings limitations bounds limits mappings maps limits variables maps lengths parameters maps limits bounds mapping size constraints mapped pointers bounds properly mapped constraints lengths.
+                // Determine memory footprint required by the next payload.
                 std::size_t _next_size = buffers_[_current_index].size();
 
-                // Ensure checking size loops variables properties mappings bounds mapped parameters arrays limits lengths mappings pointers sizes constraints maps limitations mapping bounds maps bounds limitations loops.
+                // Check if adding this payload will exceed the maximum frame bytes allowed.
                 if (_frame_payload_size + _next_size > _max_frame_payload_size) {
                     // Ensure loop advances even if a single payload is overly large
                     if (_requests_in_frame == 0) {
@@ -87,76 +86,75 @@ namespace aurum::protocol {
                         _requests_in_frame++;
                         _current_index++;
                     }
-                    // Frame constraints limits boundary parameters parameters bounds loops properties maps mapped lengths pointers mappings bounds limitations sizes loops sizes limits variables loops mappings pointers arrays.
+                    // Break loop returning back to chunk serialization logic for the current batch.
                     break;
                 }
 
-                // Add sizes mapping bounds pointers maps variables maps constraints bounds lengths sizes mapped loops limits bounds mappings sizes loops limitations variables bounds mapped limitations limits.
+                // Add the evaluated payload size into the total frame weight accumulator.
                 _frame_payload_size += _next_size;
-                // Add limits sizing constraints pointers bounds loops mappings sizes loops limits loops parameters bounds loops parameters maps lengths maps maps boundaries pointers mappings sizes variables parameters lengths mappings mappings constraints pointers arrays mapped properly bounds parameters constraints variables arrays limits properly lengths loops loops limitations limits limits mapped properties limitations parameters loops pointers variables bounds.
+                // Increment counter marking an extra payload mapped inside the active chunk.
                 _requests_in_frame++;
-                // Add limits boundary pointer pointers limitations loops mapping limitations limitations bounds loops lengths constraints parameters limitations constraints loops sizes parameters mapping constraints limitations variables lengths mappings.
+                // Move index forward checking next pending payload item in line.
                 _current_index++;
             }
 
-            // Create memory allocating map sizes mapping bounds pointers loops lengths limits constraints maps variables.
-            // Calculate header mapping boundary pointer parameters arrays bounds properly variables limitations lengths maps limits.
+            // Calculate exact total header bytes memory allocation footprint.
             std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
 
-            // Format sizes mapping bounds limits maps limits parameters constraints loops lengths mappings parameters properly mappings loops mapping pointers parameters arrays mapped maps mappings arrays lengths sizes maps boundaries variables maps properly arrays limitations limits variables lengths limitations sizes loops pointers mapping mapping sizes loops.
+            // Copy header length converting host value tracking endianness limits.
             std::uint32_t _header_size_le = _header_size;
-            // Adjust mapping bounds limitations limitations lengths arrays mapped pointers maps limitations maps bounds bounds loops limits maps limits variables lengths variables sizes arrays mapping sizes constraints boundaries limits variables variables loops mapped mappings loops mapped limits properly.
+            // Convert length into little endian binary format ensuring correct transmission.
             boost::endian::native_to_little_inplace(_header_size_le);
-            // Append header arrays mapping lengths sizing variables constraints mappings bounds sizes constraints variables lengths.
+            // Create pointer tracking memory address for header byte conversion target.
             auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_le);
-            // Push limits parameters loops mapping boundary properties mappings maps.
+            // Push exact byte length sequence appending header data.
             _output_buffer.insert(_output_buffer.end(), _header_ptr, _header_ptr + sizeof(_header_size_le));
 
-            // Setup tracking constraints variables arrays loops mapped mapping pointers sizes maps mappings variables limitations constraints bounds limits mapping maps maps variables loops.
+            // Mark starting offset tracking payload data evaluating CRC checksum.
             std::size_t _crc_start_offset = _output_buffer.size();
 
-            // Set quantity maps boundaries parameters bounds sizes mappings loops parameters lengths constraints parameters.
+            // Set amount of requests parameter tracking limit lengths values.
             std::uint16_t _qty_le = static_cast<std::uint16_t>(_requests_in_frame);
-            // Form sizes sizes bounds maps sizes maps limits arrays.
+            // Format requests quantity parameter to little endian primitive structure.
             boost::endian::native_to_little_inplace(_qty_le);
-            // Cast sizes mapped limits constraints parameters pointers.
+            // Construct pointer reading primitive integer byte sequences logically.
             auto* _qty_ptr = reinterpret_cast<const std::uint8_t*>(&_qty_le);
-            // Push sizes bounds pointers maps lengths loops.
+            // Append requests quantity identifier parameter into payload output sequence buffer.
             _output_buffer.insert(_output_buffer.end(), _qty_ptr, _qty_ptr + sizeof(_qty_le));
 
-            // Traverse constraints loops arrays limits boundaries parameters mapping variables lengths lengths sizes.
+            // Traverse accepted chunk parameters copying corresponding lengths bytes.
             for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Store maps maps loops constraints limits arrays pointers mappings properly bounds limitations bounds sizes loops parameters variables.
+                // Fetch current buffer element sizing parameters memory payload.
                 std::uint16_t _len_le = static_cast<std::uint16_t>(buffers_[_i].size());
-                // Set mapping lengths sizes limits bounds parameters variables lengths maps parameters limitations variables mapping bounds limits boundaries limitations.
+                // Adapt parameter memory endianness architecture targeting little endian protocol format.
                 boost::endian::native_to_little_inplace(_len_le);
-                // Cast sizing maps parameters limits lengths arrays mappings mapped constraints.
+                // Wrap parameter address pointer representation handling payload chunks lengths.
                 auto* _len_ptr = reinterpret_cast<const std::uint8_t*>(&_len_le);
-                // Push arrays mappings sizes mappings loops parameters loops properly lengths mapped limits maps pointers limitations bounds pointers properly properly boundaries maps limitations maps pointers properly.
+                // Feed corresponding length item block inside global output bytes boundary.
                 _output_buffer.insert(_output_buffer.end(), _len_ptr, _len_ptr + sizeof(_len_le));
             }
 
-            // Target mapped loops properties sizes constraints pointers mapping maps sizes loops maps constraints limits lengths maps.
+            // Iterate over all valid payloads inside the active chunk bounds.
             for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Add mapping sizes sizes limits mapped variables limits variables parameters variables constraints lengths mapping variables.
+                // Append payload content strictly tracking memory sequence parameters.
                 _output_buffer.insert(_output_buffer.end(), buffers_[_i].begin(), buffers_[_i].end());
             }
 
-            // Format maps bounds parameters sizes arrays sizes limits properly sizes maps mapped loops maps constraints limits properly constraints limitations limitations.
+            // Create target crc verification entity managing chunk validation parameter.
             boost::crc_ccitt_type _crc;
-            // Setup loops loops bounds pointers mappings bounds lengths pointers limits bounds mappings properly mappings lengths properly variables loops limitations constraints.
+            // Evaluate bytes mapping content from start offset evaluating checksum hash.
             _crc.process_bytes(_output_buffer.data() + _crc_start_offset, _output_buffer.size() - _crc_start_offset);
-            // Fetch limits variables lengths bounds limitations bounds limits bounds variables lengths pointers sizes constraints arrays.
+            // Extract computed check sequence parameter variable.
             std::uint16_t _crc_val = _crc.checksum();
-            // Cast limits maps mappings arrays limits sizes bounds properly loops pointers variables variables mapping lengths mappings sizes boundaries pointers.
+            // Translate primitive checksum byte data into correct network transmission representation format.
             boost::endian::native_to_little_inplace(_crc_val);
-            // Setup arrays limits bounds maps loops limitations lengths parameters pointers pointers arrays bounds bounds sizes pointers pointers maps.
+            // Reinterpret checksum block boundaries memory reference variable format.
             auto* _crc_ptr = reinterpret_cast<const std::uint8_t*>(&_crc_val);
-            // Loop arrays boundaries loops mapping boundaries limits mapping sizes mappings constraints mappings limitations maps.
+            // Append complete checksum mapping to chunk payload limit trailing element.
             _output_buffer.insert(_output_buffer.end(), _crc_ptr, _crc_ptr + sizeof(_crc_val));
         }
 
-        // Output mappings sizes boundaries limits arrays mappings lengths pointers maps bounds mappings.
+        // Return the compiled serialized array representation of the complete transaction.
         return _output_buffer;
     }
 
@@ -166,24 +164,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     request_builder& request_builder::add_ping(boost::uuids::uuid id) {
-        // Prepare local mapping variables bounds mapped sizes loops lengths properly constraints.
+        // Pre-allocate temporary storage for new ping payload elements.
         std::vector<std::uint8_t> _buffer;
-        // Adjust mapping parameters sizes mappings lengths sizes mappings.
+        // Expand internal memory bounds matching standard ping layout constraints (17 bytes).
         _buffer.reserve(17);
 
-        // Target limits boundaries loops mapping arrays bounds parameters sizes parameters limits bounds loops.
+        // Append initial opcode identifying incoming network primitive action target.
         _buffer.push_back(aurum::op_code::ping);
-        // Map bounds lengths maps sizes constraints mapped parameters lengths limits loops mappings parameters.
+        // Feed generated or received uuid referencing ping operation target bounds.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 
-        // Push mapping maps variables arrays limits pointers mapping variables mappings.
+        // Protect access while inserting data updating global state tracking payload.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Move loops bounds loops sizes mapping sizes limitations mapped boundaries loops lengths boundaries loops sizes parameters arrays.
+        // Append constructed ping target parameter object shifting memory content ownership.
         buffers_.push_back(std::move(_buffer));
-        // Add mapping limits lengths maps lengths pointers limits loops lengths mapping maps lengths.
+        // Aggregate global payload tracker size memory parameters safely avoiding locking.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Return limits bounds sizes mappings sizes mappings loops mapping loops limits mappings loops boundaries loops.
+        // Return a mutable self reference enabling sequential payload accumulation chaining.
         return *this;
     }
 
@@ -194,24 +192,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     response_builder& response_builder::add_ping(boost::uuids::uuid id, std::uint8_t exit_code) {
-        // Ensure bounds variables arrays pointers mappings mapped limits mapped bounds.
+        // Initialize an empty vector handling the localized response payload contents structure.
         std::vector<std::uint8_t> _buffer;
-        // Target boundaries parameters mapping mappings sizes limits limits properly limits limits variables lengths lengths boundaries loops arrays limitations properly mapping boundaries maps mapping variables limitations.
+        // Reserve pre-calculated memory size bounding payload size footprint parameters.
         _buffer.reserve(17);
 
-        // Adjust constraints sizes sizes limits constraints bounds mappings lengths maps variables bounds mapping properly arrays mapped pointers bounds limits bounds limits pointers loops maps constraints arrays variables maps sizes lengths mapping variables loops mapped mappings loops mapped.
+        // Serialize tracking request target parameter variable matching response context context constraint.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Map lengths sizes boundaries boundaries loops sizes mapped properly.
+        // Apply success operation result target indicating remote status condition tracking.
         _buffer.push_back(exit_code);
 
-        // Track boundaries loops loops constraints parameters mapping variables loops constraints maps.
+        // Require unique write token locking payload buffers tracking constraints logic variable mapping boundaries.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Add variables parameters sizes loops maps limits bounds loops maps boundaries mappings limits.
+        // Commit newly evaluated payload response object moving array pointers ownership directly.
         buffers_.push_back(std::move(_buffer));
-        // Push sizes loops arrays limitations constraints parameters maps mapping limits boundaries parameters mapping limits boundaries properly limitations sizes bounds limits mappings mappings limitations bounds mapped sizes.
+        // Keep tracking bytes bounds limits atomically incrementing current state parameter mapping value properly.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Cast mapping mapping constraints variables limits mapping mappings sizes lengths arrays pointers bounds sizes maps sizes limits maps mappings variables mapped maps boundaries pointers lengths maps.
+        // Grant ongoing object chaining logic matching fluent architectural reference model properly.
         return *this;
     }
 
@@ -221,24 +219,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     response_builder& response_builder::add_non_implemented(boost::uuids::uuid id) {
-        // Output mapped loops lengths sizes boundaries mapping lengths properly pointers.
+        // Define temporary sequence container storing error state response payload.
         std::vector<std::uint8_t> _buffer;
-        // Set loops sizes limits lengths boundaries sizes arrays limits properly maps bounds properly sizes.
+        // Reserve memory exactly matching the footprint of an error response block (17 bytes).
         _buffer.reserve(17);
 
-        // Frame maps arrays loops boundaries sizes variables sizes mapped.
+        // Embed UUID identifier connecting this payload with the original request parameters.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Track maps limitations limits loops lengths sizes sizes parameters boundaries boundaries loops.
+        // Emplace non-implemented exit code indicating the requested operation is unsupported.
         _buffer.push_back(aurum::exit_code::non_implemented);
 
-        // Loop constraints maps loops bounds boundaries loops loops variables loops loops mapping.
+        // Acquire lock ensuring thread-safe access to the shared payload array sequence.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Adjust bounds limits boundaries maps lengths maps limits sizes arrays maps bounds mapping lengths mappings sizes parameters loops mappings.
+        // Emplace the new payload array shifting ownership to the builder container state.
         buffers_.push_back(std::move(_buffer));
-        // Map loops arrays mapping parameters mappings variables sizes constraints.
+        // Sum total sizing securely updating memory lengths tracker across threads.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Set variables arrays maps loops limits pointers mappings sizes parameters loops arrays variables boundaries mapping pointers mappings constraints variables limits bounds properly bounds maps mapping mapping limitations pointers sizes limits.
+        // Return active object instance enabling sequential payload operation chaining.
         return *this;
     }
 
@@ -247,7 +245,7 @@ namespace aurum::protocol {
      * @return A request builder allocated on the stack.
      */
     request_builder frame_builder::as_request() const {
-        // Form boundaries constraints loops limits mappings variables mapping.
+        // Build and return a fresh request builder allocated securely on the stack.
         return request_builder{};
     }
 
@@ -256,7 +254,7 @@ namespace aurum::protocol {
      * @return A response builder allocated on the stack.
      */
     response_builder frame_builder::as_response() const {
-        // Map lengths limits mapping sizes bounds mappings parameters lengths boundaries parameters arrays parameters lengths variables mapping parameters lengths mappings variables boundaries maps pointers bounds variables maps limits limits pointers mappings sizes loops lengths pointers loops.
+        // Build and return a fresh response builder allocated securely on the stack.
         return response_builder{};
     }
 

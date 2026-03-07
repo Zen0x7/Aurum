@@ -189,16 +189,16 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
         return;
     }
 
-    // Target constraints pointer mappings variables arrays constraints.
+    // Create an instance of the frame builder to construct the requests payload.
     aurum::protocol::frame_builder _frame_builder;
-    // Format variables loops limitations pointers constraints parameters bounds bounds sizes mappings properties loops limits variables bounds limits properly mappings.
+    // Instantiate a specific request builder using the factory pattern logic.
     auto _request_builder = _frame_builder.as_request();
-    // Prepare arrays loops mapped properly.
+    // Pre-allocate memory exactly matching the quantity of generated benchmark requests.
     _request_builder.reserve(_requests_quantity);
 
-    // Iterate through the number of requests
+    // Iterate through the number of requests to generate the required payload bounds.
     for (size_t _index = 0; _index < _requests_quantity; ++_index) {
-        // Build boundaries loops loops mappings constraints limits mappings boundaries properly mapped mapping limits sizes loops parameters mappings mappings bounds pointers boundaries mapping limits constraints parameters parameters.
+        // Sequentially append ping payloads matching the benchmark iteration requirements.
         _request_builder.add_ping();
     }
 
@@ -260,7 +260,7 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
         // Pause benchmark timer avoiding penalizing throughput with bookkeeping logic
         state.PauseTiming();
 
-        // Measure read IO bounds augmenting total received elements
+        // Increment read metrics tracking bytes matching IO payload responses bounds.
         _total_bytes_read += sizeof(_response_header_length) + _response_body.size();
 
         // Flag vectors to be skipped out of aggressive dead code optimization routines
@@ -300,16 +300,16 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
         return;
     }
 
-    // Target constraints pointer mappings variables arrays constraints.
+    // Create an instance of the frame builder to construct the requests payload.
     aurum::protocol::frame_builder _frame_builder;
-    // Format variables loops limitations pointers constraints parameters bounds bounds sizes mappings properties loops limits variables bounds limits properly mappings.
+    // Instantiate a specific request builder using the factory pattern logic.
     auto _request_builder = _frame_builder.as_request();
-    // Prepare arrays loops mapped properly.
+    // Pre-allocate memory exactly matching the quantity of generated benchmark requests.
     _request_builder.reserve(_requests_quantity);
 
-    // Iterate through the number of requests
+    // Iterate through the number of requests to generate the required payload bounds.
     for (size_t _index = 0; _index < _requests_quantity; ++_index) {
-        // Build boundaries loops loops mappings constraints limits mappings boundaries properly mapped mapping limits sizes loops parameters mappings mappings bounds pointers boundaries mapping limits constraints parameters parameters.
+        // Sequentially append ping payloads matching the benchmark iteration requirements.
         _request_builder.add_ping();
     }
 
@@ -371,7 +371,7 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
         // Pause benchmark timer avoiding penalizing throughput with bookkeeping logic
         state.PauseTiming();
 
-        // Measure read IO bounds augmenting total received elements
+        // Increment read metrics tracking bytes matching IO payload responses bounds.
         _total_bytes_read += sizeof(_response_header_length) + _response_body.size();
 
         // Flag vectors to be skipped out of aggressive dead code optimization routines

@@ -100,7 +100,7 @@ namespace aurum {
         /** @brief Sequential strand execution context for safe multithreaded operation. */
         boost::asio::strand<boost::asio::any_io_executor> strand_;
 
-        /** @brief Cached header value tracking the upcoming payload limits boundary. */
+        /** @brief Cached header value defining the expected size for the incoming payload. */
         std::uint32_t header_length_ { 0 };
 
         /** @brief FIFO output buffer staging vector sequence managing async serialization overlap. */
