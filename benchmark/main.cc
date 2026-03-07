@@ -22,7 +22,10 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/write.hpp>
+#include <boost/asio/read.hpp>
 #include <boost/endian/conversion.hpp>
+#include <boost/uuid/random_generator.hpp>
+#include <boost/crc.hpp>
 
 #include <thread>
 
@@ -147,6 +150,109 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
     state.SetBytesProcessed(state.iterations() * _payload_size);
 }
 BENCHMARK(BM_TCP_Write_Throughput)->Range(8, 8192);
+
+// Benchmark measuring TCP ping throughput.
+static void BM_TCP_Ping_Throughput(benchmark::State& state) {
+    if (!g_server) {
+        g_server = std::make_unique<server_fixture>();
+    }
+
+    size_t _requests_quantity = state.range(0);
+    unsigned short _port = g_server->get_port();
+
+    boost::asio::io_context _client_io_context;
+    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
+    boost::asio::ip::tcp::socket _socket(_client_io_context);
+
+    // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
+    boost::system::error_code _ec;
+    _socket.connect(_endpoint, _ec);
+
+    if (_ec) {
+        state.SkipWithError("Failed to connect to the server.");
+        return;
+    }
+
+    // Allocate the header plus payload buffer.
+    std::vector<uint8_t> _payload;
+
+    // requests_quantity (2 bytes)
+    std::uint16_t req_qty_be = static_cast<std::uint16_t>(_requests_quantity);
+    boost::endian::native_to_big_inplace(req_qty_be);
+    auto* qty_ptr = reinterpret_cast<const uint8_t*>(&req_qty_be);
+    _payload.insert(_payload.end(), qty_ptr, qty_ptr + sizeof(req_qty_be));
+
+    // build request bodies
+    for (size_t i = 0; i < _requests_quantity; ++i) {
+        // request_length (1 + 16 = 17 bytes)
+        std::uint16_t req_len = 17;
+        boost::endian::native_to_big_inplace(req_len);
+        auto* len_ptr = reinterpret_cast<const uint8_t*>(&req_len);
+        _payload.insert(_payload.end(), len_ptr, len_ptr + sizeof(req_len));
+
+        // opcode (1)
+        _payload.push_back(1);
+
+        // transaction_id (16 bytes)
+        boost::uuids::uuid tx_id = boost::uuids::random_generator()();
+        _payload.insert(_payload.end(), tx_id.begin(), tx_id.end());
+    }
+
+    // crc16
+    boost::crc_ccitt_type crc;
+    crc.process_bytes(_payload.data(), _payload.size());
+    std::uint16_t crc_val = crc.checksum();
+    boost::endian::native_to_big_inplace(crc_val);
+    auto* crc_ptr = reinterpret_cast<const uint8_t*>(&crc_val);
+    _payload.insert(_payload.end(), crc_ptr, crc_ptr + sizeof(crc_val));
+
+    // buffer
+    std::vector<uint8_t> _buffer;
+    uint32_t header = static_cast<uint32_t>(_payload.size());
+    boost::endian::native_to_big_inplace(header);
+    auto* h_ptr = reinterpret_cast<const uint8_t*>(&header);
+    _buffer.insert(_buffer.end(), h_ptr, h_ptr + sizeof(header));
+    _buffer.insert(_buffer.end(), _payload.begin(), _payload.end());
+
+    size_t total_bytes_written = 0;
+    size_t total_bytes_read = 0;
+
+    for (auto _ : state) {
+        // Send buffer (header + payload body).
+        boost::asio::write(_socket, boost::asio::buffer(_buffer), _ec);
+        if (_ec) {
+            state.SkipWithError("Failed to write to the socket.");
+            break;
+        }
+
+        total_bytes_written += _buffer.size();
+
+        uint32_t resp_header = 0;
+        boost::asio::read(_socket, boost::asio::buffer(&resp_header, sizeof(resp_header)), _ec);
+        if (_ec) {
+            state.SkipWithError("Failed to read response header.");
+            break;
+        }
+
+        boost::endian::big_to_native_inplace(resp_header);
+
+        std::vector<uint8_t> resp_body(resp_header);
+        boost::asio::read(_socket, boost::asio::buffer(resp_body), _ec);
+        if (_ec) {
+            state.SkipWithError("Failed to read response body.");
+            break;
+        }
+
+        total_bytes_read += sizeof(resp_header) + resp_body.size();
+
+        benchmark::DoNotOptimize(_buffer);
+        benchmark::DoNotOptimize(resp_body);
+    }
+
+    state.SetBytesProcessed(total_bytes_written + total_bytes_read);
+    state.SetItemsProcessed(state.iterations() * _requests_quantity);
+}
+BENCHMARK(BM_TCP_Ping_Throughput)->Arg(1)->Arg(64)->Arg(1024)->Arg(10240);
 
 // Run benchmark engine.
 int main(int argc, char** argv) {
