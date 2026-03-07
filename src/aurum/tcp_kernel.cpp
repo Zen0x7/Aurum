@@ -25,14 +25,14 @@ namespace aurum {
     }
 
     void tcp_kernel::handle(const std::shared_ptr<std::vector<std::uint8_t>> &frame) {
-        for (const std::uint8_t b : *frame) {
-            std::cout << std::hex
-                      << std::setw(2)
-                      << std::setfill('0')
-                      << static_cast<unsigned>(b)
-                      << ' ';
-        }
-
-        std::cout << std::dec << '\n';
+        // for (const std::uint8_t b : *frame) {
+        //     std::cout << std::hex
+        //               << std::setw(2)
+        //               << std::setfill('0')
+        //               << static_cast<unsigned>(b)
+        //               << ' ';
+        // }
+        //
+        // std::cout << std::dec << '\n';
     }
 }
