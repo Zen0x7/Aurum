@@ -80,7 +80,13 @@ namespace aurum::protocol {
                 std::size_t _next_size = buffers_[_current_index].size();
 
                 // Ensure checking size loops variables properties mappings bounds mapped parameters arrays limits lengths mappings pointers sizes constraints maps limitations mapping bounds maps bounds limitations loops.
-                if (_frame_payload_size + _next_size > _max_frame_payload_size && _requests_in_frame > 0) {
+                if (_frame_payload_size + _next_size > _max_frame_payload_size) {
+                    // Ensure loop advances even if a single payload is overly large
+                    if (_requests_in_frame == 0) {
+                        _frame_payload_size += _next_size;
+                        _requests_in_frame++;
+                        _current_index++;
+                    }
                     // Frame constraints limits boundary parameters parameters bounds loops properties maps mapped lengths pointers mappings bounds limitations sizes loops sizes limits variables loops mappings pointers arrays.
                     break;
                 }
@@ -95,7 +101,7 @@ namespace aurum::protocol {
 
             // Create memory allocating map sizes mapping bounds pointers loops lengths limits constraints maps variables.
             // Calculate header mapping boundary pointer parameters arrays bounds properly variables limitations lengths maps limits.
-            std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size;
+            std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
 
             // Format sizes mapping bounds limits maps limits parameters constraints loops lengths mappings parameters properly mappings loops mapping pointers parameters arrays mapped maps mappings arrays lengths sizes maps boundaries variables maps properly arrays limitations limits variables lengths limitations sizes loops pointers mapping mapping sizes loops.
             std::uint32_t _header_size_le = _header_size;
