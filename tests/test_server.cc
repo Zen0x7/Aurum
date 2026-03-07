@@ -17,6 +17,7 @@
 #include "tcp_server_fixture.hpp"
 #include <boost/uuid/random_generator.hpp>
 #include <boost/crc.hpp>
+#include <aurum/protocol.hpp>
 
 TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     boost::asio::io_context client_io;
@@ -63,8 +64,8 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Append the request size component into the body stream
     _payload.insert(_payload.end(), _request_length_ptr, _request_length_ptr + sizeof(_request_length));
 
-    // Push explicitly the ping operational code (1) at the first byte
-    _payload.push_back(1);
+    // Push explicitly the ping operational code at the first byte
+    _payload.push_back(aurum::op_code::ping);
 
     // Create a new transactional uniform identifier string
     boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
@@ -154,7 +155,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     ASSERT_EQ(_transaction_id, _response_transaction_id);
 
     // Assure that expected successful command operations properly log status mapping bound variable flag
-    ASSERT_EQ(_response_body[20], 200);
+    ASSERT_EQ(_response_body[20], aurum::exit_code::success);
 
     // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
     socket.close();

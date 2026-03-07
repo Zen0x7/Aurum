@@ -17,6 +17,7 @@
 #include <aurum/state.hpp>
 
 #include <aurum/tcp_session.hpp>
+#include <aurum/protocol.hpp>
 
 #include <cstring>
 
@@ -31,8 +32,8 @@ namespace aurum {
             callback_return_type _response(17);
             // Copy the original transaction ID into the response buffer.
             std::memcpy(_response.data(), _transaction_id.data, 16);
-            // Set the exit status to 0, representing a non-implemented operation error.
-            _response[16] = 0; // Exit code 0 for non-implemented
+            // Set the exit status to non_implemented, representing a non-implemented operation error.
+            _response[16] = exit_code::non_implemented;
             // Return the constructed response vector.
             return _response;
         };
@@ -40,14 +41,14 @@ namespace aurum {
         // Fill the entire handlers array with the default non-implemented fallback.
         handlers_.fill(_non_implemented);
 
-        // Bind opcode 1 to the ping operational handler.
-        handlers_[1] = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
+        // Bind opcode ping to the ping operational handler.
+        handlers_[op_code::ping] = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
             // Allocate 17 bytes for the ping success response.
             callback_return_type _response(17);
             // Echo the original transaction ID back in the response.
             std::memcpy(_response.data(), _transaction_id.data, 16);
-            // Set the exit status to 200 to represent success.
-            _response[16] = 200; // Exit code 200 for ping (success)
+            // Set the exit status to success to represent success.
+            _response[16] = exit_code::success;
             // Return the ping response vector.
             return _response;
         };
