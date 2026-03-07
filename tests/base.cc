@@ -16,9 +16,20 @@
 
 #include <gtest/gtest.h>
 
+/**
+ * @brief Simple baseline sanity check for the testing framework environment.
+ * @details Validates properly that standard library fixed-width integer assertions work correctly natively.
+ */
 TEST(A, B) {
+    // Assert 8-bit integers identity successfully
     ASSERT_EQ(std::uint8_t{1}, std::uint8_t{1});
+
+    // Assert 16-bit integers identity successfully
     ASSERT_EQ(std::uint16_t{1}, std::uint16_t{1});
+
+    // Assert 32-bit integers identity successfully
     ASSERT_EQ(std::uint32_t{1}, std::uint32_t{1});
+
+    // Assert 64-bit integers identity successfully
     ASSERT_EQ(std::uint64_t{1}, std::uint64_t{1});
 }

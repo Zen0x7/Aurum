@@ -20,9 +20,18 @@
 #include <atomic>
 
 namespace aurum {
+    /**
+     * @brief Holds global configuration parameters for the Aurum state.
+     * @details This structure uses atomics to allow concurrent access across multiple threads.
+     */
     struct configuration {
+      /** @brief Number of active worker threads for IO operations. */
       std::atomic<std::size_t> threads_ {1};
+
+      /** @brief TCP port where the listener is currently bound. */
       std::atomic<unsigned short> tcp_port_{0};
+
+      /** @brief Flag indicating if the TCP listener is fully initialized and ready. */
       std::atomic<bool> tcp_ready_{false};
     };
 }

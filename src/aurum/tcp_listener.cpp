@@ -21,30 +21,59 @@
 #include <iostream>
 
 namespace aurum {
+    /**
+     * @brief Constructs a new TCP listener bounded to the specified IO context and port.
+     * @param io_context The Boost Asio execution context.
+     * @param state A shared pointer to the application state containing configuration details.
+     */
     tcp_listener::tcp_listener(boost::asio::io_context & io_context, std::shared_ptr<state> state) : state_(std::move(state)),
         acceptor_(io_context, boost::asio::ip::tcp::endpoint{
                       boost::asio::ip::tcp::v4(), state_->get_configuration().tcp_port_.load(std::memory_order_acquire)
                   }), socket_(io_context) {
 
+        // Store the actual bound port (in case port 0 was provided) into the state configuration atomically.
         state_->get_configuration().tcp_port_.store(acceptor_.local_endpoint().port(), std::memory_order_release);
+
+        // Mark the listener readiness flag as true to signal waiters.
         state_->get_configuration().tcp_ready_.store(true, std::memory_order_release);
 
+        // Print to standard output indicating the server port.
         std::cout << "Server is running on " << state_->get_configuration().tcp_port_.load(std::memory_order_acquire) << std::endl;
     }
 
-    std::shared_ptr<state> & tcp_listener::get_state() { return state_; }
+    /**
+     * @brief Retrieves the application state reference held by the listener.
+     * @return A mutable reference to the shared state pointer.
+     */
+    std::shared_ptr<state> & tcp_listener::get_state() {
+        // Return a reference to the mutable shared state instance.
+        return state_;
+    }
 
+    /**
+     * @brief Starts the asynchronous connection acceptance loop.
+     */
     void tcp_listener::start() {
+        // Begin the loop of accepting connections asynchronously.
         do_accept();
     }
 
+    /**
+     * @brief Internal method performing the asynchronous accept operation.
+     */
     void tcp_listener::do_accept() {
+        // Enqueue an asynchronous operation to accept an incoming TCP socket connection.
         acceptor_.async_accept(socket_, [this] (const boost::system::error_code &error_code) {
+            // Check if the accept operation succeeded without errors.
             if (!error_code) {
+                // Create a new tcp_session instance handling the newly accepted socket connection.
                 const auto _session = std::make_shared<tcp_session>(std::move(socket_), state_);
+                // Add the newly created session to the active state tracking container.
                 state_->add_session(_session);
+                // Instruct the session to start reading its initial protocol headers.
                 _session->start();
             }
+            // Re-invoke accept to continuously wait for the next incoming connection in the loop.
             do_accept();
         });
     }
