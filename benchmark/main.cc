@@ -282,11 +282,17 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
             break;
         }
 
+        // Pause benchmark timer avoiding penalizing throughput with parsing/allocation logic
+        state.PauseTiming();
+
         // Parse and restore the response header to native endianness format
         boost::endian::big_to_native_inplace(_response_header_length);
 
         // Prepare an adequate size binary buffer vector for accommodating the response body
         std::vector<uint8_t> _response_body(_response_header_length);
+
+        // Resume benchmark timer focusing primarily over server side execution cycles processing capability
+        state.ResumeTiming();
 
         // Proceed synchronously with a complete socket read capturing the total body
         boost::asio::read(_socket, boost::asio::buffer(_response_body), _ec);
@@ -297,12 +303,18 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
             break;
         }
 
+        // Pause benchmark timer avoiding penalizing throughput with bookkeeping logic
+        state.PauseTiming();
+
         // Measure read IO bounds augmenting total received elements
         _total_bytes_read += sizeof(_response_header_length) + _response_body.size();
 
         // Flag vectors to be skipped out of aggressive dead code optimization routines
         benchmark::DoNotOptimize(_buffer);
         benchmark::DoNotOptimize(_response_body);
+
+        // Resume benchmark timer targeting the next read/write cycles boundary
+        state.ResumeTiming();
     }
 
     // Mark absolute byte throughput correctly by combining written and read data stream operations
