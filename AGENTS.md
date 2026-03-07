@@ -18,15 +18,16 @@ To interact with this project, assume that the environment already has all depen
   - `GTest` and `GBenchmark` for testing and instrumentation.
 - **Compiler Tools (Sanitizers):** We support rigorous checks via `AddressSanitizer` (`ENABLE_ASAN`) and `ThreadSanitizer` (`ENABLE_TSAN`) for detecting race conditions and memory leaks.
 
-### 1.2. Aurum Architecture (Base TCP Protocol)
-Currently, Aurum is being built from scratch. It will provide a service on a TCP port that will allow establishing a network of Aurum nodes.
+### 1.2. Aurum Architecture
+Currently, Aurum is being built from scratch. As an agent, **you are building the foundations of a mission-critical environment**. Performance, memory safety, concurrency, and scalability are the core of the product, not just a set of networking features.
+
+#### Binary Based TCP Protocol
+As part of the architecture, Aurum nodes will communicate with each other using a custom protocol. It will provide a service on a TCP port that will allow establishing a network of nodes.
 
 - **Base Protocol (In development):** Although the detailed specification is "TBD", the protocol will function with a `header` + `body` structure.
 - **General Logical Structure:** Each complete payload will be a `frame` containing multiple requests inside it.
 - **Request Identification:** Each request will have an *operational code* (`opcode`) and a *transactional identifier* (a 16-byte UUID).
 - **Payloads:** Depending on each operational code, the payload will vary. For example, a `ping` (requiring a `pong`) will not need an extra payload, only the operational code and the UUID. The response will return the same transaction identifier and any useful payload if applicable.
-
-As an agent, **you are building the foundations of a mission-critical environment**. Performance, memory safety, concurrency, and scalability are the core of the product.
 
 ---
 
