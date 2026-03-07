@@ -74,9 +74,11 @@ If there are ambiguities, you must **stop and question me** in Spanish, using **
 OK, para avanzar necesito resolver las siguientes preguntas...
 
 Q: ¿[CONTENT OF YOUR QUESTION 1, Detailing your architectural or technical confusion]?
+
 A: ...
 
 Q: ¿[CONTENT OF YOUR QUESTION 2, Specifying if you need to choose between path A or path B]?
+
 A: ...
 ```
 Operational Block: After sending the questions, suspend modifications and wait for my answers.
