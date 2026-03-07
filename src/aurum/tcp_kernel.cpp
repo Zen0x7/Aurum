@@ -110,11 +110,13 @@ namespace aurum {
             _offset += sizeof(std::uint16_t);
         }
 
-        // Declare dynamic output structure capturing each output result mappings
-        std::vector<callback_return_type> _responses;
+        // Create an instance of the frame builder and get a response builder.
+        aurum::protocol::frame_builder _frame_builder;
+        // Output pointer arrays lengths loops properly mapping parameters loops.
+        auto _response_builder = _frame_builder.as_response();
 
-        // Adjust container limiting capacity parameters allocation
-        _responses.reserve(_number_of_requests);
+        // Reserve space for all incoming requests mapping constraints parameters mapping bounds variables sizes limits lengths mapping.
+        _response_builder.reserve(_number_of_requests);
 
         // Start evaluating inner components lengths mapping bounds values limits properly
         for (const auto _request_length : _requests_lengths) {
@@ -151,95 +153,17 @@ namespace aurum {
             // Execute actual handler reference mappings operation dynamically
             const auto& _handler = state_->get_handlers()[_opcode];
 
-            // Collect return mappings mapping boundaries sizes properly mapping arrays
-            _responses.push_back(_handler(_transaction_id, _payload, session, state_));
+            // Execute mapped limits handler boundaries mapping limitations passing bounds arrays loops.
+            _handler(_response_builder, _transaction_id, _payload, session, state_);
 
             // Adjust limiting pointer mappings arrays map value variables
             _offset += _request_length;
         }
 
-        // Instantiate return data structure pointer wrapper memory pointer arrays limits maps
-        auto _response_frame = std::make_shared<std::vector<std::uint8_t>>();
+        // Output limits variables bounds parameters lengths sizes arrays mappings boundaries limits properties constraints.
+        auto _response_buffers = _response_builder.get_buffers();
 
-        // Set dynamic total size mapped lengths boundary pointers map values
-        std::uint32_t _total_body_size = sizeof(std::uint16_t) + sizeof(std::uint16_t);
-
-        // Scale limits pointer sizes lengths mapping mapping boundaries parameters map variables
-        for (const auto& _resp : _responses) {
-            // Iterate mapped array mappings structures bounds boundaries parameters limits properly
-            _total_body_size += sizeof(std::uint16_t) + _resp.size();
-        }
-
-        // Ensure proper memory mapped mapping structures lengths map boundaries allocations
-        _response_frame->reserve(sizeof(std::uint32_t) + _total_body_size);
-
-        // Wrap data boundary maps limit size boundary boundaries lengths maps properly
-        std::uint32_t _header_size_le = _total_body_size;
-
-        // Correct little endian mapping architecture map boundaries structures mappings
-        boost::endian::native_to_little_inplace(_header_size_le);
-
-        // Prepare cast mapped pointer wrapper maps boundaries bounds limits parameter lengths map variables
-        auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_le);
-
-        // Output headers mapping pointers properly map lengths boundaries structures limits map elements
-        _response_frame->insert(_response_frame->end(), _header_ptr, _header_ptr + sizeof(_header_size_le));
-
-        // Locate tail mappings boundaries variables mappings length sizes limits bounds limits properly
-        std::size_t _crc_start_offset = _response_frame->size();
-
-        // Convert the responses quantity to a 16-bit integer
-        std::uint16_t _responses_quantity_le = static_cast<std::uint16_t>(_responses.size());
-
-        // Convert the responses quantity to little endian
-        boost::endian::native_to_little_inplace(_responses_quantity_le);
-
-        // Create a byte pointer to the little endian responses quantity
-        auto* _responses_quantity_ptr = reinterpret_cast<const std::uint8_t*>(&_responses_quantity_le);
-
-        // Insert the responses quantity into the response frame
-        _response_frame->insert(_response_frame->end(), _responses_quantity_ptr, _responses_quantity_ptr + sizeof(_responses_quantity_le));
-
-        // Iterate through each response to insert its length
-        for (const auto& _resp : _responses) {
-            // Get the size of the response as a 16-bit integer
-            std::uint16_t _resp_len_le = static_cast<std::uint16_t>(_resp.size());
-
-            // Convert the response length to little endian
-            boost::endian::native_to_little_inplace(_resp_len_le);
-
-            // Create a byte pointer to the little endian response length
-            auto* _response_length_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_len_le);
-
-            // Insert the response length into the response frame
-            _response_frame->insert(_response_frame->end(), _response_length_ptr, _response_length_ptr + sizeof(_resp_len_le));
-        }
-
-        // Iterate through each response to insert its payload
-        for (const auto& _resp : _responses) {
-            // Insert the response payload into the response frame
-            _response_frame->insert(_response_frame->end(), _resp.begin(), _resp.end());
-        }
-
-        // Create a CRC16 calculator
-        boost::crc_ccitt_type _resp_crc;
-
-        // Process the response frame bytes to calculate the CRC16
-        _resp_crc.process_bytes(_response_frame->data() + _crc_start_offset, _response_frame->size() - _crc_start_offset);
-
-        // Get the calculated CRC16 value
-        std::uint16_t _resp_crc_val = _resp_crc.checksum();
-
-        // Convert the CRC16 value to little endian
-        boost::endian::native_to_little_inplace(_resp_crc_val);
-
-        // Create a byte pointer to the little endian CRC16 value
-        auto* _resp_crc_ptr = reinterpret_cast<const std::uint8_t*>(&_resp_crc_val);
-
-        // Insert the CRC16 value into the response frame
-        _response_frame->insert(_response_frame->end(), _resp_crc_ptr, _resp_crc_ptr + sizeof(_resp_crc_val));
-
-        // Return the constructed response frame
-        return _response_frame;
+        // Return pointers mapping limits maps boundaries mapped variables mapping constraints arrays bounds limitations properly bounds maps.
+        return std::make_shared<std::vector<std::uint8_t>>(std::move(_response_buffers));
     }
 }

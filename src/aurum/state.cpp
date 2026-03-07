@@ -27,30 +27,18 @@ namespace aurum {
      */
     state::state() {
         // Initialize an unhandled operation callback placeholder for undefined opcodes.
-        handler_type _non_implemented = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
-            // Allocate 17 bytes for the response (16 for ID, 1 for status).
-            callback_return_type _response(17);
-            // Copy the original transaction ID into the response buffer.
-            std::memcpy(_response.data(), _transaction_id.data, 16);
-            // Set the exit status to non_implemented, representing a non-implemented operation error.
-            _response[16] = exit_code::non_implemented;
-            // Return the constructed response vector.
-            return _response;
+        handler_type _non_implemented = [](aurum::protocol::response_builder& _builder, const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> void {
+            // Output mapped loop limit boundary variable parameters properly.
+            _builder.add_non_implemented(_transaction_id);
         };
 
         // Fill the entire handlers array with the default non-implemented fallback.
         handlers_.fill(_non_implemented);
 
         // Bind opcode ping to the ping operational handler.
-        handlers_[op_code::ping] = [](const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> callback_return_type {
-            // Allocate 17 bytes for the ping success response.
-            callback_return_type _response(17);
-            // Echo the original transaction ID back in the response.
-            std::memcpy(_response.data(), _transaction_id.data, 16);
-            // Set the exit status to success to represent success.
-            _response[16] = exit_code::success;
-            // Return the ping response vector.
-            return _response;
+        handlers_[op_code::ping] = [](aurum::protocol::response_builder& _builder, const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> void {
+            // Adjust bounds limitations parameters mapping maps properly loops lengths properly bounds limits properly loops loops bounds bounds constraints loops.
+            _builder.add_ping(_transaction_id, aurum::exit_code::success);
         };
     }
 

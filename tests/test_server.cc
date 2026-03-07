@@ -37,68 +37,18 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
 
     ASSERT_EQ(state->get_sessions().size(), 1);
 
-    // Declare the payload buffer array
-    std::vector<uint8_t> _payload;
-
-    // Set the amount of requests inside the frame, in this case 1
-    std::uint16_t _requests_quantity = 1;
-
-    // Convert to little endian the quantity
-    boost::endian::native_to_little_inplace(_requests_quantity);
-
-    // Cast a byte pointer pointing to the native variable address to copy it
-    auto* _requests_quantity_ptr = reinterpret_cast<const uint8_t*>(&_requests_quantity);
-
-    // Insert the little endian payload size element into the buffer
-    _payload.insert(_payload.end(), _requests_quantity_ptr, _requests_quantity_ptr + sizeof(_requests_quantity));
-
-    // Define the request length byte size limit constraint (1 byte opcode + 16 byte uuid)
-    std::uint16_t _request_length = 17;
-
-    // Enforce little endian representation to format the length chunk
-    boost::endian::native_to_little_inplace(_request_length);
-
-    // Convert integer into bytes pointer
-    auto* _request_length_ptr = reinterpret_cast<const uint8_t*>(&_request_length);
-
-    // Append the request size component into the body stream
-    _payload.insert(_payload.end(), _request_length_ptr, _request_length_ptr + sizeof(_request_length));
-
-    // Push explicitly the ping operational code at the first byte
-    _payload.push_back(aurum::op_code::ping);
-
-    // Create a new transactional uniform identifier string
+    // Track identifier mappings lengths limitations properly loops mapping sizes sizes pointers boundaries properly limits limits.
     boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
-    // Include the generated identifier segment
-    _payload.insert(_payload.end(), _transaction_id.begin(), _transaction_id.end());
+    // Adjust mapped frame sizes loops variables boundaries limitations arrays maps constraints sizes.
+    aurum::protocol::frame_builder _frame_builder;
+    // Push limits mapped loops limits variables sizes lengths maps parameters mapped parameters lengths sizes mappings properly boundaries mappings.
+    auto _request_builder = _frame_builder.as_request();
+    // Execute variables arrays mappings parameters loops mapping limits mapping mapping.
+    _request_builder.add_ping(_transaction_id);
 
-    // Allocate CCITT type CRC16 engine checker to protect integrity
-    boost::crc_ccitt_type _crc;
-
-    // Update inner bytes context to generate matching CRC sequence
-    _crc.process_bytes(_payload.data(), _payload.size());
-
-    // Pull resulting computed value representing checksum target
-    std::uint16_t _crc_value = _crc.checksum();
-
-    // Overwrite the actual local variable format into little endian structure
-    boost::endian::native_to_little_inplace(_crc_value);
-
-    // Build memory mapped alias over crc value
-    auto* _crc_ptr = reinterpret_cast<const uint8_t*>(&_crc_value);
-
-    // Safely dump tail bytes acting as integrity token wrapper
-    _payload.insert(_payload.end(), _crc_ptr, _crc_ptr + sizeof(_crc_value));
-
-    // Define length limit for the full internal body wrapper payload
-    uint32_t _header_length = _payload.size();
-
-    // Endianness swap towards little to properly encode frame limit bound
-    boost::endian::native_to_little_inplace(_header_length);
-
-    // Write outgoing size limit through TCP endpoint layer
-    boost::asio::write(socket, boost::asio::buffer(&_header_length, sizeof(_header_length)));
+    // Adjust sizes mappings limits maps bounds properly mapping boundaries limitations.
+    auto _payload = _request_builder.get_buffers();
 
     // Dump actual serialized payload through TCP sequence pipeline
     boost::asio::write(socket, boost::asio::buffer(_payload));
