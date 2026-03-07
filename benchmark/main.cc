@@ -20,6 +20,7 @@
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ip/address.hpp>
 #include <boost/asio/write.hpp>
 #include <boost/endian/conversion.hpp>
 
@@ -76,7 +77,7 @@ static void BM_TCP_Connect(benchmark::State& state) {
 
     unsigned short _port = g_server->get_port();
     boost::asio::io_context _client_io_context;
-    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::address::from_string("127.0.0.1"), _port);
+    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
 
     for (auto _ : state) {
         boost::asio::ip::tcp::socket _socket(_client_io_context);
@@ -108,7 +109,7 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
     unsigned short _port = g_server->get_port();
 
     boost::asio::io_context _client_io_context;
-    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::address::from_string("127.0.0.1"), _port);
+    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
     // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
