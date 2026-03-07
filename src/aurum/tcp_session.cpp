@@ -96,9 +96,9 @@ namespace aurum {
         boost::asio::async_write(
             // The active TCP network socket instance.
             socket_,
-            // Provide a boost buffer mapping the entire front vector contents.
+            // Provide a boost buffer referencing the active payload content safely.
             boost::asio::buffer(*queue_.front()),
-            // Attach a callback to process write completion logic bounds matching context wrapper strand safely explicitly bounds tracking sizes mapped.
+            // Attach a callback binding execution context safely tracking thread concurrency properly.
             boost::asio::bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& error_code, std::size_t bytes_transferred) {
                 // Route completion status to the internal callback handler.
                 on_write(error_code, bytes_transferred);
@@ -134,7 +134,7 @@ namespace aurum {
                 socket_,
                 // Map the newly-exposed front of the queue buffer container.
                 boost::asio::buffer(*queue_.front()),
-                // Pass a new completion token extending session lifetime wrapping inside executor wrapper explicitly tracking correctly matching contexts bounds loops bounds mappings properly.
+                // Attach a callback binding execution context safely preserving session lifetime appropriately.
                 boost::asio::bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& ec, std::size_t bt) {
                     // Loop recursively invoking the write completion dispatcher.
                     on_write(ec, bt);

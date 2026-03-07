@@ -68,102 +68,102 @@ namespace aurum {
             return nullptr;
         }
 
-        // Initialize parameter gathering mapping how many requests limits inside
+        // Initialize parameter tracking the number of requests embedded in the payload
         std::uint16_t _number_of_requests = 0;
 
-        // Map payload target into specific mapping structure
+        // Copy the number of requests primitive value from the memory offset directly
         std::memcpy(&_number_of_requests, frame->data() + _offset, sizeof(_number_of_requests));
 
-        // Reverse swap little endian architecture network array encoding to natively
+        // Convert the requests count parameter from network little-endian to native architecture
         boost::endian::little_to_native_inplace(_number_of_requests);
 
-        // Advance payload size token forward dynamically
+        // Advance the offset parsing cursor forward by the size of the counter token
         _offset += sizeof(std::uint16_t);
 
-        // Prepare local vector arrays storing tracking length per item processed
+        // Prepare local vector storing lengths mapping each parsed payload sequentially
         std::vector<std::uint16_t> _requests_lengths;
 
-        // Expand structure size optimizing allocation avoiding chunk reallocation latency
+        // Pre-allocate vector capacity preventing dynamic reallocation bottlenecks during processing
         _requests_lengths.reserve(_number_of_requests);
 
-        // Pre-validate minimal requirements enforcing bounds limiting
+        // Ensure payload size physically covers the length array layout structurally
         if (frame->size() - 2 - _offset < _number_of_requests * sizeof(std::uint16_t)) {
-            // Kill dropped payload processing bounds limitation exceptions
+            // Abort parsing frame processing boundaries rejecting corrupted packet
             return nullptr;
         }
 
-        // Traverse dynamically loop allocating requested size elements mapping
+        // Iterate extracting size structures dynamically for every single bundled payload
         for (std::uint16_t _index = 0; _index < _number_of_requests; _index++) {
-            // Define length memory storage map parameter
+            // Initialize length primitive memory target explicitly for current payload block
             std::uint16_t _n_request_length = 0;
 
-            // Replicate structure mapping raw bounds
+            // Extract the length mapping directly from network bounds pointer safely
             std::memcpy(&_n_request_length, frame->data() + _offset, sizeof(_n_request_length));
 
-            // Format incoming mapping mapping standard
+            // Adapt the length value layout translating from little-endian protocol to native
             boost::endian::little_to_native_inplace(_n_request_length);
 
-            // Target output memory boundary mappings array sequentially
+            // Push evaluated payload size tracking parameter into local tracking constraints array
             _requests_lengths.push_back(_n_request_length);
 
-            // Scroll dynamic limits offset parameters array
+            // Move the bounds cursor forwarding parsing parameters to the next limit bounds object
             _offset += sizeof(std::uint16_t);
         }
 
         // Create an instance of the frame builder and get a response builder.
         aurum::protocol::frame_builder _frame_builder;
-        // Output pointer arrays lengths loops properly mapping parameters loops.
+        // Output response target array properly matching requested context boundary objects.
         auto _response_builder = _frame_builder.as_response();
 
-        // Reserve space for all incoming requests mapping constraints parameters mapping bounds variables sizes limits lengths mapping.
+        // Reserve space covering required allocations to minimize vector memory reallocations correctly.
         _response_builder.reserve(_number_of_requests);
 
-        // Start evaluating inner components lengths mapping bounds values limits properly
+        // Iterate sequentially tracking each inner payload component processing its handler function
         for (const auto _request_length : _requests_lengths) {
-            // Evaluate limiting checks enforcing strict sizes map parameter values
+            // Verify bounding limits securing memory accessing operations checking frame footprint correctly
             if (frame->size() - 2 - _offset < _request_length) {
-                // Drop malformed mappings
+                // Terminate operation preventing payload bounds invalid memory access securely
                 return nullptr;
             }
 
-            // Recheck limits boundary sizes mapping sizes parameters mappings
+            // Verify bounding sizes enforce minimum memory capacity bounds structurally for identifier parsing
             if (_request_length < sizeof(std::uint8_t) + 16) {
-                // Drop missing boundary map bounds
+                // Return safely breaking mapping loop ensuring correct payload access sizes structure
                 return nullptr;
             }
 
-            // Assign byte limits primitive value operation limits maps limits mappings
+            // Extract opcode parameter extracting exact operational target mapping request command type
             std::uint8_t _opcode = frame->data()[_offset];
 
-            // Target limits bounds mappings transactions identifier values
+            // Setup identifier target instance representing transaction mapping unique operation
             transaction_id _transaction_id;
 
-            // Assign mapping map copy byte data targets arrays properly values
+            // Copy identifier safely memory bounds evaluating parameters extracting exact transaction reference
             std::memcpy(_transaction_id.data, frame->data() + _offset + sizeof(std::uint8_t), 16);
 
-            // Scroll bounds offset pointers limiting maps
+            // Move offset pointer dynamically mapping current bounds safely towards inner parameters target
             std::size_t _payload_offset = _offset + sizeof(std::uint8_t) + 16;
 
-            // Process payload target mapping boundaries mapping mappings pointers lengths boundaries sizes
+            // Compute payload bounds safely tracking exact inner boundary evaluating length array accurately
             std::size_t _payload_length = _request_length - (sizeof(std::uint8_t) + 16);
 
-            // Convert byte limits pointers payloads mapping into structured reference parameter mapping spans
+            // Construct bounded payload wrapper object handling data parsing correctly safely accessing parameters
             payload_buffer _payload(frame->data() + _payload_offset, _payload_length);
 
-            // Execute actual handler reference mappings operation dynamically
+            // Locate mapped handler array executing correct logic bounding operation opcode accurately
             const auto& _handler = state_->get_handlers()[_opcode];
 
-            // Execute mapped limits handler boundaries mapping limitations passing bounds arrays loops.
+            // Execute handler function passing parameters enabling correctly processing dynamic request targets accurately.
             _handler(_response_builder, _transaction_id, _payload, session, state_);
 
-            // Adjust limiting pointer mappings arrays map value variables
+            // Shift limits pointer moving towards next frame object correctly indexing bounds dynamically
             _offset += _request_length;
         }
 
-        // Output limits variables bounds parameters lengths sizes arrays mappings boundaries limits properties constraints.
+        // Extract fully mapped serialized buffers representing operation correctly returning payloads structurally.
         auto _response_buffers = _response_builder.get_buffers();
 
-        // Return pointers mapping limits maps boundaries mapped variables mapping constraints arrays bounds limitations properly bounds maps.
+        // Return dynamically bounded response pointer effectively handling array sequence payload return correctly.
         return std::make_shared<std::vector<std::uint8_t>>(std::move(_response_buffers));
     }
 }
