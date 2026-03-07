@@ -24,6 +24,19 @@ option(BUILD_BENCHMARK "Enable building of benchmark" ON)
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Release build: enabling O3 + native + LTO")
+
+    add_compile_options(
+            -O3
+            -march=native
+            -flto
+    )
+    add_link_options(
+            -flto
+    )
+endif()
+
 if(ENABLE_ASAN AND ENABLE_TSAN)
     message(FATAL_ERROR "ASAN and TSAN cannot be enabled together")
 endif()

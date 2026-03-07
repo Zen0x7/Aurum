@@ -23,13 +23,16 @@
 
 namespace aurum {
     class state;
+    class tcp_session;
 
     class tcp_kernel {
         std::shared_ptr<state> state_;
     public:
         explicit tcp_kernel(std::shared_ptr<state> state);
 
-        void handle(const std::shared_ptr<std::vector<std::uint8_t>> & frame);
+        std::shared_ptr<const std::vector<std::uint8_t>> handle(
+            const std::shared_ptr<std::vector<std::uint8_t>> & frame,
+            std::shared_ptr<tcp_session> session);
     };
 }
 

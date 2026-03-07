@@ -34,13 +34,18 @@ namespace aurum {
         explicit tcp_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state);
         void start();
 
+        void send(std::shared_ptr<const std::vector<std::uint8_t>> message);
+
         boost::uuids::uuid get_id() const;
     private:
         void read_header();
         void read_body();
+        void on_send(std::shared_ptr<const std::vector<std::uint8_t>> message);
+        void on_write(boost::system::error_code error_code, std::size_t bytes_transferred);
 
         boost::asio::ip::tcp::socket socket_;
         std::uint32_t header_length_ { 0 };
+        std::vector<std::shared_ptr<const std::vector<std::uint8_t>>> queue_;
     };
 }
 
