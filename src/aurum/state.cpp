@@ -18,6 +18,7 @@
 
 #include <aurum/tcp_session.hpp>
 #include <aurum/protocol.hpp>
+#include <aurum/handlers.hpp>
 
 #include <cstring>
 
@@ -26,20 +27,11 @@ namespace aurum {
      * @brief Constructs a new state object and initializes default handlers.
      */
     state::state() {
-        // Initialize an unhandled operation callback placeholder for undefined opcodes.
-        handler_type _non_implemented = [](aurum::protocol::response_builder& _builder, const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> void {
-            // Output mapped loop limit boundary variable parameters properly.
-            _builder.add_non_implemented(_transaction_id);
-        };
-
         // Fill the entire handlers array with the default non-implemented fallback.
-        handlers_.fill(_non_implemented);
+        handlers_.fill(aurum::handlers::get_non_implemented_handler());
 
         // Bind opcode ping to the ping operational handler.
-        handlers_[op_code::ping] = [](aurum::protocol::response_builder& _builder, const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> void {
-            // Adjust bounds limitations parameters mapping maps properly loops lengths properly bounds limits properly loops loops bounds bounds constraints loops.
-            _builder.add_ping(_transaction_id, aurum::exit_code::success);
-        };
+        handlers_[op_code::ping] = aurum::handlers::get_ping_handler();
     }
 
     /**
