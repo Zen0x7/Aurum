@@ -175,6 +175,18 @@ namespace aurum::protocol {
     }
 
     /**
+     * @brief Resets the builder state clearing all internal payloads safely.
+     */
+    void base_builder::reset() {
+        // Require exclusive lock preventing state reads while clearing buffers map securely.
+        std::unique_lock _lock(shared_buffers_mutex_);
+        // Truncate dynamically allocated inner buffers vector avoiding memory dangling limits cleanly.
+        buffers_.clear();
+        // Return aggregate memory boundary tracking integer to absolute initial sequence mapping natively.
+        total_payload_size_.store(0, std::memory_order_relaxed);
+    }
+
+    /**
      * @brief Adds a ping request to the internal buffer.
      * @param id An optional explicit transaction ID, generated automatically if not provided.
      * @return A reference to the active builder instance for method chaining.

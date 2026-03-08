@@ -118,8 +118,10 @@ namespace aurum {
     void tcp_client::disconnect() {
         // Check if socket indicates ongoing connectivity bounds constraints accurately validating hooks.
         if (socket_.is_open()) {
-            // Provide explicit cancellation command enforcing correct network boundary closure hooks.
-            socket_.close();
+            // Define error code variable capturing potential closure operation exceptions cleanly natively.
+            boost::system::error_code _ec;
+            // Provide explicit cancellation command enforcing correct network boundary closure hooks securely.
+            socket_.close(_ec);
         }
     }
 

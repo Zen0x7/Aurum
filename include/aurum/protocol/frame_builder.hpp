@@ -70,6 +70,11 @@ namespace aurum::protocol {
          * @return A pair where the first element is the serialized buffer and the second element is the number of frames generated.
          */
         std::pair<std::vector<std::uint8_t>, std::size_t> get_data();
+
+        /**
+         * @brief Resets the builder state clearing all internal payloads safely.
+         */
+        void reset();
     };
 
     /**
