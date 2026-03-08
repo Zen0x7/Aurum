@@ -140,49 +140,44 @@ bool node::connect(const std::string& host, unsigned short port) {
     // Discover connection bounds accurately checking structural references properly securely.
     auto _endpoints = _resolver.resolve(host, std::to_string(port), _resolve_ec);
 
-    // Validate structural bounds preventing connecting explicitly correctly logically structurally dynamically natively.
+    // Return early if the resolution failed.
     if (_resolve_ec) {
-        // Return natively completely structurally logically correctly mapped statically gracefully securely safely.
         return false;
     }
 
-    // Attach local structural exceptions evaluating dynamically explicitly securely correctly.
+    // Connect sequentially to the resolved endpoints.
     boost::system::error_code _connect_ec;
-    // Map socket limits executing physically logically natively exactly efficiently structurally.
     boost::asio::connect(_socket, _endpoints, _connect_ec);
 
-    // Verify completely connection boundaries gracefully correctly dynamically structurally safely.
+    // Return early if the connection failed.
     if (_connect_ec) {
-        // Break mapping structurally exactly elegantly cleanly securely properly statically.
         return false;
     }
 
-    // Create session tracking instance directly encapsulating active connection accurately tightly.
+    // Create a new session with the newly connected socket.
     auto _session = std::make_shared<tcp_session>(std::move(_socket), state_);
 
-    // Push local mapping tracking session internally tracking limits bounds safely appropriately.
+    // Register the session in the shared state map.
     if (!state_->add_session(_session)) {
-        // Rollback operations properly correctly mapped dynamically elegantly cleanly correctly safely.
         return false;
     }
 
-    // Prepare structural message mapping payload logic directly cleanly securely smoothly properly.
+    // Prepare a builder to construct an identify frame request.
     aurum::protocol::frame_builder _builder;
-    // Retrieve tracking limits structurally completely cleanly dynamically correctly safely accurately.
     auto _request = _builder.as_request();
-    // Configure tracking logically mapped structurally effectively efficiently efficiently securely.
+
+    // Attach the current node identifier inside an identify opcode block.
     _request.add_identify(state_->get_node_id());
 
-    // Flush payload limits securely effectively physically effectively physically tightly efficiently.
+    // Flush the built frames structurally to a memory vector.
     auto [_buffer, _count] = _request.get_data();
 
-    // Serialize cleanly properly physically logically seamlessly safely mapping efficiently smoothly.
+    // Push the resulting byte array through the socket output stream natively.
     _session->send(std::make_shared<std::vector<std::uint8_t>>(std::move(_buffer)));
 
-    // Trigger internal dynamically logically properly efficiently physically properly smoothly correctly.
+    // Begin the asynchronous payload parsing flow.
     _session->start();
 
-    // Map completely logically securely completely smoothly accurately mapped cleanly safely properly.
     return true;
 }
 
@@ -191,26 +186,21 @@ bool node::connect(const std::string& host, unsigned short port) {
  * @param remote_node_id The 16-byte identifier representing the active node context safely.
  */
 void node::disconnect(boost::uuids::uuid remote_node_id) {
-    // Acquire a list of sessions to remove tracking instance properly safely tracking efficiently.
+    // Array collecting all matching node IDs targets mapping properly.
     std::vector<boost::uuids::uuid> _sessions_to_remove;
 
-    // Scope lock to safely iterate and find sessions to remove dynamically cleanly.
+    // Acquire lock and safely identify matching elements gracefully mapped securely safely natively.
     {
-        // Scope bounds exactly protecting dynamically smoothly efficiently gracefully logically securely natively correctly seamlessly.
         std::unique_lock _lock(state_->get_sessions_mutex());
-        // Map elements explicitly smoothly correctly securely seamlessly smoothly accurately tightly completely properly appropriately efficiently.
         for (const auto& [_id, _session] : state_->get_sessions()) {
-            // Verify bounds mapping seamlessly securely mapping smoothly natively securely safely dynamically efficiently natively efficiently safely reliably accurately efficiently smoothly gracefully.
             if (_session->get_node_id() == remote_node_id) {
-                // Attach targeting mapping exactly tightly effectively cleanly smoothly correctly securely gracefully physically reliably logically mapped smoothly accurately safely logically safely physically.
                 _sessions_to_remove.push_back(_id);
             }
         }
     }
 
-    // Traverse boundaries natively explicitly tightly reliably correctly exactly elegantly gracefully physically.
+    // Safely iterate removing instances securely natively implicitly handling limits appropriately.
     for (const auto& _id : _sessions_to_remove) {
-        // Call internal mapper deleting logically explicitly properly properly accurately gracefully safely smoothly.
         state_->remove_session(_id);
     }
 }
@@ -219,23 +209,19 @@ void node::disconnect(boost::uuids::uuid remote_node_id) {
  * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
  */
 void node::disconnect_all() {
-    // List to store sessions to remove tracking effectively effectively gracefully effectively explicitly safely.
+    // Local list isolating targeting mappings reliably.
     std::vector<boost::uuids::uuid> _sessions_to_remove;
 
-    // Scope lock to safely iterate and find sessions to remove cleanly successfully physically smoothly securely.
+    // Isolate lookup handling lock gracefully accurately.
     {
-        // Extract dynamically effectively properly natively physically properly mapped seamlessly efficiently efficiently.
         std::unique_lock _lock(state_->get_sessions_mutex());
-        // Isolate precisely tracking successfully effectively correctly cleanly gracefully correctly cleanly seamlessly.
         for (const auto& [_id, _session] : state_->get_sessions()) {
-            // Push limits directly accurately smoothly efficiently smoothly correctly correctly gracefully cleanly.
             _sessions_to_remove.push_back(_id);
         }
     }
 
-    // Drop tracking parameters mapping reliably effectively physically properly physically safely gracefully safely.
+    // Eliminate collected map components iteratively smoothly explicitly accurately completely.
     for (const auto& _id : _sessions_to_remove) {
-        // Call state remove session mapping correctly safely accurately correctly cleanly properly safely elegantly.
         state_->remove_session(_id);
     }
 }
