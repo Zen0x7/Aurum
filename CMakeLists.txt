@@ -23,6 +23,13 @@ option(BUILD_BENCHMARK "Enable building of benchmark" ON)
 
 option(ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(ENABLE_TSAN "Enable ThreadSanitizer" OFF)
+option(ENABLE_PROFILE "Enable Profiling (gprof / debug symbols)" OFF)
+
+if(ENABLE_PROFILE)
+    message(STATUS "Profiling enabled: adding -g and -pg flags")
+    add_compile_options(-g -pg)
+    add_link_options(-pg)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Release build: enabling O3 + native + LTO")
