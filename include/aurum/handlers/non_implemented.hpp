@@ -19,6 +19,7 @@
 
 #include <aurum/state.hpp>
 #include <aurum/protocol/frame_builder.hpp>
+#include <boost/core/ignore_unused.hpp>
 
 namespace aurum::handlers {
     /**
@@ -27,9 +28,11 @@ namespace aurum::handlers {
      */
     inline handler_type get_non_implemented_handler() {
         // Return a lambda capturing nothing, taking the required handler_type arguments.
-        return [](aurum::protocol::response_builder& _builder, const transaction_id& _transaction_id, payload_buffer _payload, shared_tcp_session _session, shared_state _state) -> void {
+        return [](protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
+            boost::ignore_unused(payload, session, state);
+
             // Append a non-implemented response frame to the builder for the given transaction.
-            _builder.add_non_implemented(_transaction_id);
+            builder.add_non_implemented(transaction_id);
         };
     }
 }

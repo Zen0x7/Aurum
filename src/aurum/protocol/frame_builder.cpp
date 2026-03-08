@@ -67,8 +67,6 @@ namespace aurum::protocol {
         // Track the total number of frames successfully serialized locally.
         std::size_t _frames_count = 0;
 
-        // Define maximum allowed requests in a single frame payload (fits in 16-bit uint).
-        constexpr std::size_t _max_requests_per_frame = 65535; // std::numeric_limits<std::uint16_t>::max()
         // Define maximum frame payload size to avoid integer overflow issues during transmission.
         constexpr std::size_t _max_frame_payload_size = 4294967295 - 131078; // theoretical max limit avoiding overflows.
 
@@ -79,6 +77,8 @@ namespace aurum::protocol {
 
         // Iterate through all pending payloads to group them into frame chunks.
         while (_current_index < _total_requests) {
+            // Define maximum allowed requests in a single frame payload (fits in 16-bit uint).
+            constexpr std::size_t _max_requests_per_frame = 65535;
             // Initialize a counter to track the number of payloads in the current chunk.
             std::size_t _requests_in_frame = 0;
             // Initialize an accumulator for the total byte size of the current chunk's payload.
@@ -89,7 +89,7 @@ namespace aurum::protocol {
             // Group payloads until the chunk hits the maximum allowed items or the end of the list.
             while (_current_index < _total_requests && _requests_in_frame < _max_requests_per_frame) {
                 // Get the byte size of the payload currently being evaluated.
-                std::size_t _next_size = buffers_[_current_index].size();
+                const std::size_t _next_size = buffers_[_current_index].size();
 
                 // Stop grouping if adding the current payload exceeds the maximum frame byte size.
                 if (_frame_payload_size + _next_size > _max_frame_payload_size) {
@@ -112,7 +112,7 @@ namespace aurum::protocol {
             }
 
             // Calculate the total number of bytes required for the frame header.
-            std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
+            const std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
 
             // Copy the calculated header size into a local variable to be encoded.
             std::uint32_t _header_size_le = _header_size;
@@ -198,7 +198,7 @@ namespace aurum::protocol {
         _buffer.reserve(17);
 
         // Add the explicit ping opcode byte to the beginning of the payload.
-        _buffer.push_back(aurum::op_code::ping);
+        _buffer.push_back(ping);
         // Append the 16-byte UUID referencing the current operation to the payload buffer.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 

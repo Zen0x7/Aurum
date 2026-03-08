@@ -39,7 +39,7 @@ namespace aurum {
                                                              state_(std::move(state)),
                                                              kernel_(std::make_shared<tcp_kernel>(state_)),
                                                              socket_(std::move(socket)),
-                                                             strand_(boost::asio::make_strand(socket_.get_executor())) {
+                                                             strand_(make_strand(socket_.get_executor())) {
     }
 
     /**
@@ -47,7 +47,7 @@ namespace aurum {
      */
     void tcp_session::start() {
         // Post the initial read to the session's strand.
-        boost::asio::post(strand_, [this, _self = shared_from_this()]() {
+        post(strand_, [this, _self = shared_from_this()]() {
             // Trigger the initial read operation to fetch the message header.
             read_header();
         });
@@ -59,7 +59,7 @@ namespace aurum {
      */
     void tcp_session::send(std::shared_ptr<const std::vector<std::uint8_t>> message) {
         // Post the write request to the socket's executor to guarantee thread safety.
-        boost::asio::post(
+        post(
             // Access the underlying IO executor from the strand.
             strand_,
             // Capture the session shared pointer to extend lifecycle and move the payload message.
@@ -93,13 +93,13 @@ namespace aurum {
         }
 
         // Start an asynchronous write operation with the first message in the queue.
-        boost::asio::async_write(
+        async_write(
             // The active TCP network socket instance.
             socket_,
             // Provide a boost buffer referencing the active payload content safely.
             boost::asio::buffer(*queue_.front()),
             // Attach a callback binding execution context safely tracking thread concurrency properly.
-            boost::asio::bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& error_code, std::size_t bytes_transferred) {
+            bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& error_code, std::size_t bytes_transferred) {
                 // Route completion status to the internal callback handler.
                 on_write(error_code, bytes_transferred);
             })
@@ -129,15 +129,15 @@ namespace aurum {
         // Check if there are remaining pending payloads sitting in the queue.
         if (!queue_.empty()) {
             // Dispatch a subsequent asynchronous write for the next item in the line.
-            boost::asio::async_write(
+            async_write(
                 // Target the active socket connection again.
                 socket_,
                 // Map the newly-exposed front of the queue buffer container.
                 boost::asio::buffer(*queue_.front()),
                 // Attach a callback binding execution context safely preserving session lifetime appropriately.
-                boost::asio::bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& ec, std::size_t bt) {
+                bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& scoped_error_code, const std::size_t scoped_bytes_transferred) {
                     // Loop recursively invoking the write completion dispatcher.
-                    on_write(ec, bt);
+                    on_write(scoped_error_code, scoped_bytes_transferred);
                 })
             );
         }
@@ -160,7 +160,7 @@ namespace aurum {
         auto _self = shared_from_this();
         // Request the IO context to asynchronously fetch exactly the 4-byte length header.
         async_read(socket_, boost::asio::buffer(&header_length_, sizeof(header_length_)),
-                   boost::asio::bind_executor(strand_, [this, _self](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
+                   bind_executor(strand_, [this, _self](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
                        // Suppress the unused variable warning for transferred byte count.
                        boost::ignore_unused(bytes_transferred);
                        // Convert the received 4 bytes from little-endian back to the host architecture format.
@@ -187,16 +187,15 @@ namespace aurum {
         auto _body = std::make_shared<std::vector<std::uint8_t> >(header_length_);
         // Submit an asynchronous read targeting the active session payload socket connection.
         async_read(socket_, boost::asio::buffer(*_body),
-                   boost::asio::bind_executor(strand_, [this, _self, _body](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
+                   bind_executor(strand_, [this, _self, _body](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
                        // Block compiler warnings marking transferred parameter explicitly as skipped over.
                        boost::ignore_unused(bytes_transferred);
                        // Verify that no physical connection error interrupted the body reception sequence.
                        if (!error_code) {
                            // Call the internal kernel logic parser block to process incoming buffer structures.
-                           auto _response = kernel_->handle(_body, _self);
 
                            // If the parsing logic returns a valid resulting payload.
-                           if (_response) {
+                           if (const auto _response = kernel_->handle(_body, _self); _response) {
                                // Request transmission sequence back over the TCP link wrapping the payload buffer structure.
                                send(_response);
                            }

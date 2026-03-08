@@ -2,9 +2,9 @@
 #include <aurum/protocol/frame_builder.hpp>
 
 TEST(FrameBuilderTest, CanBuildRequest) {
-    aurum::protocol::frame_builder builder;
-    auto req_builder = builder.as_request();
-    req_builder.add_ping();
-    auto buffers = req_builder.get_buffers();
-    EXPECT_GT(buffers.size(), 0);
+    constexpr aurum::protocol::frame_builder _frame_builder;
+    auto _request_builder = _frame_builder.as_request();
+    _request_builder.add_ping();
+    const auto _buffers = _request_builder.get_buffers();
+    EXPECT_GT(_buffers.size(), 0);
 }

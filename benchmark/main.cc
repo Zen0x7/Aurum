@@ -41,7 +41,7 @@ struct server_fixture {
     std::thread runner_thread_;
     int thread_count_;
 
-    server_fixture(int thread_count = 1) : node_(std::make_unique<node>()), thread_count_(thread_count) {
+    server_fixture(const int thread_count = 1) : node_(std::make_unique<node>()), thread_count_(thread_count) {
         state_ = node_->get_state();
 
         // Start on an ephemeral port.
@@ -76,7 +76,7 @@ static int g_server_threads = 0;
 static std::mutex g_server_mutex;
 
 static void setup_server(int threads) {
-    std::lock_guard<std::mutex> lock(g_server_mutex);
+    std::lock_guard _lock(g_server_mutex);
     if (!g_server || g_server_threads != threads) {
         g_server = std::make_unique<server_fixture>(threads);
         g_server_threads = threads;
@@ -87,18 +87,18 @@ static void setup_server(int threads) {
 static void BM_TCP_Connect(benchmark::State& state) {
     setup_server(1);
 
-    unsigned short _port = g_server->get_port();
+    const unsigned short _port = g_server->get_port();
     boost::asio::io_context _client_io_context;
-    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
+    const boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
 
     for (auto _ : state) {
         boost::asio::ip::tcp::socket _socket(_client_io_context);
 
         // Measure time taken to successfully connect.
-        boost::system::error_code _ec;
-        _socket.connect(_endpoint, _ec);
+        boost::system::error_code _error_code;
+        _socket.connect(_endpoint, _error_code);
 
-        if (_ec) {
+        if (_error_code) {
             state.SkipWithError("Failed to connect to the server.");
             break;
         }
@@ -115,11 +115,11 @@ BENCHMARK(BM_TCP_Connect);
 static void BM_TCP_Write_Throughput(benchmark::State& state) {
     setup_server(1);
 
-    size_t _payload_size = state.range(0);
-    unsigned short _port = g_server->get_port();
+    const size_t _payload_size = state.range(0);
+    const unsigned short _port = g_server->get_port();
 
     boost::asio::io_context _client_io_context;
-    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
+    const boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
     // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
@@ -168,8 +168,8 @@ BENCHMARK(BM_TCP_Write_Throughput)->Range(8, 8192);
 static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     setup_server(1);
 
-    size_t _requests_quantity = state.range(0);
-    unsigned short _port = g_server->get_port();
+    const size_t _requests_quantity = state.range(0);
+    const unsigned short _port = g_server->get_port();
 
     boost::asio::io_context _client_io_context;
     boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
@@ -185,7 +185,7 @@ static void BM_TCP_Ping_Throughput(benchmark::State& state) {
     }
 
     // Create an instance of the frame builder to construct the requests payload.
-    aurum::protocol::frame_builder _frame_builder;
+    protocol::frame_builder _frame_builder;
     // Instantiate a specific request builder using the factory pattern logic.
     auto _request_builder = _frame_builder.as_request();
     // Pre-allocate memory exactly matching the quantity of generated benchmark requests.
@@ -279,24 +279,24 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
     // Setup server with thread count equal to the second range parameter
     setup_server(state.range(1));
 
-    size_t _requests_quantity = state.range(0);
-    unsigned short _port = g_server->get_port();
+    const size_t _requests_quantity = state.range(0);
+    const unsigned short _port = g_server->get_port();
 
     boost::asio::io_context _client_io_context;
     boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
     // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
-    boost::system::error_code _ec;
-    _socket.connect(_endpoint, _ec);
+    boost::system::error_code _error_code;
+    _socket.connect(_endpoint, _error_code);
 
-    if (_ec) {
+    if (_error_code) {
         state.SkipWithError("Failed to connect to the server.");
         return;
     }
 
     // Create an instance of the frame builder to construct the requests payload.
-    aurum::protocol::frame_builder _frame_builder;
+    constexpr protocol::frame_builder _frame_builder;
     // Instantiate a specific request builder using the factory pattern logic.
     auto _request_builder = _frame_builder.as_request();
     // Pre-allocate memory exactly matching the quantity of generated benchmark requests.
@@ -319,10 +319,10 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
 
     for (auto _ : state) {
         // Write the frame buffer completely towards the tcp socket synchronously
-        boost::asio::write(_socket, boost::asio::buffer(_buffer), _ec);
+        boost::asio::write(_socket, boost::asio::buffer(_buffer), _error_code);
 
         // Exit early if a connection issue prevented the frame buffer from writing
-        if (_ec) {
+        if (_error_code) {
             state.SkipWithError("Failed to write to the socket.");
             break;
         }
@@ -334,10 +334,10 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
         uint32_t _response_header_length = 0;
 
         // Read the exact 4 bytes synchronous representing the response header size
-        boost::asio::read(_socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)), _ec);
+        boost::asio::read(_socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)), _error_code);
 
         // Exit early if a connection issue prevented the header read from finishing
-        if (_ec) {
+        if (_error_code) {
             state.SkipWithError("Failed to read response header.");
             break;
         }
@@ -355,10 +355,10 @@ static void BM_TCP_Ping_Throughput_MT(benchmark::State& state) {
         state.ResumeTiming();
 
         // Proceed synchronously with a complete socket read capturing the total body
-        boost::asio::read(_socket, boost::asio::buffer(_response_body), _ec);
+        boost::asio::read(_socket, boost::asio::buffer(_response_body), _error_code);
 
         // Break out of loop dynamically if a socket error is met during read logic
-        if (_ec) {
+        if (_error_code) {
             state.SkipWithError("Failed to read response body.");
             break;
         }
@@ -396,18 +396,18 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
     // Setup server with thread count equal to the second range parameter
     setup_server(state.range(1));
 
-    size_t _payload_size = state.range(0);
-    unsigned short _port = g_server->get_port();
+    const size_t _payload_size = state.range(0);
+    const unsigned short _port = g_server->get_port();
 
     boost::asio::io_context _client_io_context;
-    boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
+    const boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
     // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
-    boost::system::error_code _ec;
-    _socket.connect(_endpoint, _ec);
+    boost::system::error_code _error_code;
+    _socket.connect(_endpoint, _error_code);
 
-    if (_ec) {
+    if (_error_code) {
         state.SkipWithError("Failed to connect to the server.");
         return;
     }
@@ -431,8 +431,8 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
         state.ResumeTiming();
 
         // Send buffer (header + payload body).
-        boost::asio::write(_socket, boost::asio::buffer(_buffer), _ec);
-        if (_ec) {
+        boost::asio::write(_socket, boost::asio::buffer(_buffer), _error_code);
+        if (_error_code) {
             state.SkipWithError("Failed to write to the socket.");
             break;
         }
@@ -453,9 +453,9 @@ BENCHMARK(BM_TCP_Write_Throughput_MT)
 
 // Run benchmark engine.
 int main(int argc, char** argv) {
-    ::benchmark::Initialize(&argc, argv);
-    if (::benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
-    ::benchmark::RunSpecifiedBenchmarks();
-    ::benchmark::Shutdown();
+    benchmark::Initialize(&argc, argv);
+    if (benchmark::ReportUnrecognizedArguments(argc, argv)) return 1;
+    benchmark::RunSpecifiedBenchmarks();
+    benchmark::Shutdown();
     return 0;
 }

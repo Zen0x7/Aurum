@@ -19,7 +19,6 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 #include <boost/asio.hpp>
 #include <aurum/protocol/frame_builder.hpp>
 
@@ -29,7 +28,6 @@ namespace aurum {
      * @brief TCP client class handling raw socket communication.
      */
     class tcp_client {
-    private:
         /** @brief IO context managing execution of asynchronous operations. */
         boost::asio::io_context io_context_;
 
@@ -37,7 +35,7 @@ namespace aurum {
         boost::asio::ip::tcp::socket socket_;
 
         /** @brief Internal request builder for constructing payloads. */
-        aurum::protocol::request_builder request_builder_;
+        protocol::request_builder request_builder_;
 
     public:
         /**
@@ -61,7 +59,7 @@ namespace aurum {
          * @brief Retrieves the underlying builder mapping incoming network structures.
          * @return A reference to the active request builder context.
          */
-        aurum::protocol::request_builder& get_builder();
+        protocol::request_builder& get_builder();
 
         /**
          * @brief Sends the binary payload across the connected socket interface.
