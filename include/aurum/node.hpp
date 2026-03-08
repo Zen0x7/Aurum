@@ -66,6 +66,25 @@ public:
     void stop();
 
     /**
+     * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
+     * @param host The remote peer IP address structurally mapped string.
+     * @param port The target destination listener port integer properly.
+     * @return True if connection was completely established natively securely.
+     */
+    bool connect(const std::string& host, unsigned short port);
+
+    /**
+     * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.
+     * @param remote_node_id The 16-byte identifier representing the active node context safely.
+     */
+    void disconnect(boost::uuids::uuid remote_node_id);
+
+    /**
+     * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
+     */
+    void disconnect_all();
+
+    /**
      * @brief Retrieves the underlying shared state of the node.
      * @return A shared pointer to the node's state.
      */

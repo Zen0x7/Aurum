@@ -144,7 +144,9 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
         std::memcpy(_buffer.data(), &_header_length, sizeof(uint32_t));
 
         // Fill body with dummy repeating data.
-        std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
+        if (_payload_size > 0) {
+            std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
+        }
 
         // Resume benchmark timer focusing primarily over server side execution cycles processing capability
         state.ResumeTiming();
@@ -425,7 +427,9 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
         std::memcpy(_buffer.data(), &_header_length, sizeof(uint32_t));
 
         // Fill body with dummy repeating data.
-        std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
+        if (_payload_size > 0) {
+            std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
+        }
 
         // Resume benchmark timer focusing primarily over server side execution cycles processing capability
         state.ResumeTiming();

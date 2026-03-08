@@ -28,11 +28,17 @@ namespace aurum::handlers {
      */
     inline handler_type get_non_implemented_handler() {
         // Return a lambda capturing nothing, taking the required handler_type arguments.
-        return [](protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
+        return [](std::uint8_t opcode, message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
             boost::ignore_unused(payload, session, state);
 
-            // Append a non-implemented response frame to the builder for the given transaction.
-            builder.add_non_implemented(transaction_id);
+            // Ignore non-implemented responses to prevent response loops securely
+            if (type == response) {
+                // Return gracefully without processing a response further
+                return;
+            }
+
+            // Append a non-implemented response frame to the builder for the given transaction targeting the specific failed opcode.
+            builder.add_non_implemented(opcode, transaction_id);
         };
     }
 }

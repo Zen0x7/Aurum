@@ -14,24 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef AURUM_OP_CODE_HPP
-#define AURUM_OP_CODE_HPP
+#ifndef AURUM_MESSAGE_TYPE_HPP
+#define AURUM_MESSAGE_TYPE_HPP
 
 #include <cstdint>
 
 namespace aurum {
 
     /**
-     * @brief Defines operational codes for network requests.
-     * @details Used by the protocol to map incoming frames to their respective state handlers.
+     * @brief Defines message types for network payloads.
+     * @details Used by the protocol to distinguish between a request and a response.
      */
-    enum op_code : std::uint8_t {
-        /** @brief Operational code representing a network ping request. */
-        ping = 1,
-        /** @brief Operational code for identifying network peer instances dynamically. */
-        identify = 2
+    enum message_type : std::uint8_t {
+        /** @brief Message type representing a network request. */
+        request = 0,
+        /** @brief Message type representing a network response. */
+        response = 1
     };
 
 }
 
-#endif // AURUM_OP_CODE_HPP
+#endif // AURUM_MESSAGE_TYPE_HPP

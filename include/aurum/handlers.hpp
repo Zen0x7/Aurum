@@ -19,5 +19,6 @@
 
 #include <aurum/handlers/non_implemented.hpp>
 #include <aurum/handlers/ping.hpp>
+#include <aurum/handlers/identify.hpp>
 
 #endif // AURUM_HANDLERS_HPP

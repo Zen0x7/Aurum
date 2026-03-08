@@ -18,6 +18,7 @@
 #define AURUM_PROTOCOL_HPP
 
 #include <aurum/protocol/op_code.hpp>
+#include <aurum/protocol/message_type.hpp>
 #include <aurum/protocol/exit_code.hpp>
 #include <aurum/protocol/frame_builder.hpp>
 
