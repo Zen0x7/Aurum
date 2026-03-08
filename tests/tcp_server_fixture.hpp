@@ -19,44 +19,41 @@
 
 #include <gtest/gtest.h>
 
+#include <aurum/node.hpp>
 #include <aurum/state.hpp>
 #include <aurum/configuration.hpp>
-#include <aurum/tcp_listener.hpp>
-#include <aurum/tcp_session.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/endian/conversion.hpp>
 
 #include <thread>
 #include <atomic>
+#include <memory>
 
 class tcp_server_fixture : public ::testing::Test {
 protected:
-    boost::asio::io_context io;
+    std::unique_ptr<aurum::node> test_node;
     std::shared_ptr<aurum::state> state;
-    std::unique_ptr<aurum::tcp_listener> listener;
-    std::thread io_thread;
+    std::thread runner_thread;
 
     void SetUp() override {
-        state = std::make_shared<aurum::state>();
+        test_node = std::make_unique<aurum::node>();
+        state = test_node->get_state();
 
         state->get_configuration().tcp_port_.store(0);
         state->get_configuration().threads_.store(1);
 
-        listener = std::make_unique<aurum::tcp_listener>(io, state);
-        listener->start();
-
-        io_thread = std::thread([this] { io.run(); });
+        runner_thread = std::thread([this] { test_node->run(); });
 
         wait_until([this] {
-                  return state->get_configuration().tcp_ready_.load();
-              });
+            return state->get_configuration().tcp_ready_.load();
+        });
     }
 
     void TearDown() override {
-        io.stop();
-        if (io_thread.joinable())
-            io_thread.join();
+        test_node->stop();
+        if (runner_thread.joinable())
+            runner_thread.join();
     }
 
     template<class Predicate>

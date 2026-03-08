@@ -59,102 +59,102 @@ namespace aurum::protocol {
         // Define maximum frame payload size to avoid integer overflow issues during transmission.
         constexpr std::size_t _max_frame_payload_size = 4294967295 - 131078; // theoretical max limit avoiding overflows.
 
-        // Track the current payload being processed.
+        // Initialize an index to track the current position in the payload list.
         std::size_t _current_index = 0;
-        // Store total number of payloads in the local buffer array.
+        // Retrieve the total number of queued payloads from the internal buffer.
         std::size_t _total_requests = buffers_.size();
 
-        // Process all pending payloads creating frame chunks if required by limits.
+        // Iterate through all pending payloads to group them into frame chunks.
         while (_current_index < _total_requests) {
-            // Count how many individual payloads are included in this specific chunk.
+            // Initialize a counter to track the number of payloads in the current chunk.
             std::size_t _requests_in_frame = 0;
-            // Accumulate total raw byte size for this chunk payload data.
+            // Initialize an accumulator for the total byte size of the current chunk's payload.
             std::size_t _frame_payload_size = 0;
-            // Record the starting payload index for the current chunk evaluation.
+            // Record the starting payload index to reference the subset for the current chunk.
             std::size_t _start_index = _current_index;
 
-            // Iterate over remaining payloads validating size limits per chunk.
+            // Group payloads until the chunk hits the maximum allowed items or the end of the list.
             while (_current_index < _total_requests && _requests_in_frame < _max_requests_per_frame) {
-                // Determine memory footprint required by the next payload.
+                // Get the byte size of the payload currently being evaluated.
                 std::size_t _next_size = buffers_[_current_index].size();
 
-                // Check if adding this payload will exceed the maximum frame bytes allowed.
+                // Stop grouping if adding the current payload exceeds the maximum frame byte size.
                 if (_frame_payload_size + _next_size > _max_frame_payload_size) {
-                    // Ensure loop advances even if a single payload is overly large
+                    // Forcefully include the payload if it is the only item in the chunk to prevent an infinite loop.
                     if (_requests_in_frame == 0) {
                         _frame_payload_size += _next_size;
                         _requests_in_frame++;
                         _current_index++;
                     }
-                    // Break loop returning back to chunk serialization logic for the current batch.
+                    // Exit the grouping loop to begin serializing the current chunk.
                     break;
                 }
 
-                // Add the evaluated payload size into the total frame weight accumulator.
+                // Add the byte size of the current payload to the chunk's total payload size accumulator.
                 _frame_payload_size += _next_size;
-                // Increment counter marking an extra payload mapped inside the active chunk.
+                // Increment the counter tracking the total number of payloads in the current chunk.
                 _requests_in_frame++;
-                // Move index forward checking next pending payload item in line.
+                // Advance the index to evaluate the next queued payload in the buffer.
                 _current_index++;
             }
 
-            // Calculate exact total header bytes memory allocation footprint.
+            // Calculate the total number of bytes required for the frame header.
             std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
 
-            // Copy header length converting host value tracking endianness limits.
+            // Copy the calculated header size into a local variable to be encoded.
             std::uint32_t _header_size_le = _header_size;
-            // Convert length into little endian binary format ensuring correct transmission.
+            // Convert the header size from the native endianness to little endian format.
             boost::endian::native_to_little_inplace(_header_size_le);
-            // Create pointer tracking memory address for header byte conversion target.
+            // Reinterpret the converted 32-bit integer as an array of bytes.
             auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_le);
-            // Push exact byte length sequence appending header data.
+            // Append the little-endian encoded header size bytes to the final output buffer.
             _output_buffer.insert(_output_buffer.end(), _header_ptr, _header_ptr + sizeof(_header_size_le));
 
-            // Mark starting offset tracking payload data evaluating CRC checksum.
+            // Record the current output buffer size to use as the starting point for CRC calculation.
             std::size_t _crc_start_offset = _output_buffer.size();
 
-            // Set amount of requests parameter tracking limit lengths values.
+            // Cast the number of requests in the frame into a 16-bit unsigned integer.
             std::uint16_t _qty_le = static_cast<std::uint16_t>(_requests_in_frame);
-            // Format requests quantity parameter to little endian primitive structure.
+            // Convert the requests quantity to little-endian format.
             boost::endian::native_to_little_inplace(_qty_le);
-            // Construct pointer reading primitive integer byte sequences logically.
+            // Reinterpret the 16-bit requests quantity integer as an array of bytes.
             auto* _qty_ptr = reinterpret_cast<const std::uint8_t*>(&_qty_le);
-            // Append requests quantity identifier parameter into payload output sequence buffer.
+            // Append the encoded quantity value to the output buffer.
             _output_buffer.insert(_output_buffer.end(), _qty_ptr, _qty_ptr + sizeof(_qty_le));
 
-            // Traverse accepted chunk parameters copying corresponding lengths bytes.
+            // Iterate over all payload items included in this frame chunk.
             for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Fetch current buffer element sizing parameters memory payload.
+                // Determine the size in bytes of the current payload and store it as a 16-bit integer.
                 std::uint16_t _len_le = static_cast<std::uint16_t>(buffers_[_i].size());
-                // Adapt parameter memory endianness architecture targeting little endian protocol format.
+                // Convert the size length value into little-endian architecture format.
                 boost::endian::native_to_little_inplace(_len_le);
-                // Wrap parameter address pointer representation handling payload chunks lengths.
+                // Cast the 16-bit length value into an addressable byte pointer.
                 auto* _len_ptr = reinterpret_cast<const std::uint8_t*>(&_len_le);
-                // Feed corresponding length item block inside global output bytes boundary.
+                // Push the encoded little-endian payload length into the frame's output buffer.
                 _output_buffer.insert(_output_buffer.end(), _len_ptr, _len_ptr + sizeof(_len_le));
             }
 
-            // Iterate over all valid payloads inside the active chunk bounds.
+            // Iterate sequentially over all the buffered payloads assigned to the current frame.
             for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Append payload content strictly tracking memory sequence parameters.
+                // Copy the actual raw payload bytes directly into the combined output buffer.
                 _output_buffer.insert(_output_buffer.end(), buffers_[_i].begin(), buffers_[_i].end());
             }
 
-            // Create target crc verification entity managing chunk validation parameter.
+            // Initialize a CCITT standard CRC calculator instance.
             boost::crc_ccitt_type _crc;
-            // Evaluate bytes mapping content from start offset evaluating checksum hash.
+            // Feed the constructed frame data (from quantity to end of payload) into the CRC calculator.
             _crc.process_bytes(_output_buffer.data() + _crc_start_offset, _output_buffer.size() - _crc_start_offset);
-            // Extract computed check sequence parameter variable.
+            // Extract the generated 16-bit checksum value from the CRC instance.
             std::uint16_t _crc_val = _crc.checksum();
-            // Translate primitive checksum byte data into correct network transmission representation format.
+            // Convert the calculated checksum to little-endian network representation.
             boost::endian::native_to_little_inplace(_crc_val);
-            // Reinterpret checksum block boundaries memory reference variable format.
+            // Cast the checksum value to a byte pointer to allow appending.
             auto* _crc_ptr = reinterpret_cast<const std::uint8_t*>(&_crc_val);
-            // Append complete checksum mapping to chunk payload limit trailing element.
+            // Append the checksum bytes at the very end of the constructed frame chunk.
             _output_buffer.insert(_output_buffer.end(), _crc_ptr, _crc_ptr + sizeof(_crc_val));
         }
 
-        // Return the compiled serialized array representation of the complete transaction.
+        // Return the fully serialized buffer containing all assembled frame chunks.
         return _output_buffer;
     }
 
@@ -164,24 +164,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     request_builder& request_builder::add_ping(boost::uuids::uuid id) {
-        // Pre-allocate temporary storage for new ping payload elements.
+        // Allocate an empty vector for storing the newly requested ping payload.
         std::vector<std::uint8_t> _buffer;
-        // Expand internal memory bounds matching standard ping layout constraints (17 bytes).
+        // Pre-allocate exactly 17 bytes to prevent memory reallocation during construction.
         _buffer.reserve(17);
 
-        // Append initial opcode identifying incoming network primitive action target.
+        // Add the explicit ping opcode byte to the beginning of the payload.
         _buffer.push_back(aurum::op_code::ping);
-        // Feed generated or received uuid referencing ping operation target bounds.
+        // Append the 16-byte UUID referencing the current operation to the payload buffer.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 
-        // Protect access while inserting data updating global state tracking payload.
+        // Acquire an exclusive lock over the shared buffers sequence to ensure thread safety.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Append constructed ping target parameter object shifting memory content ownership.
+        // Emplace the newly constructed ping payload into the internal storage using move semantics.
         buffers_.push_back(std::move(_buffer));
-        // Aggregate global payload tracker size memory parameters safely avoiding locking.
+        // Atomically increase the global payload counter by the exact 17 bytes appended.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Return a mutable self reference enabling sequential payload accumulation chaining.
+        // Return a reference to the builder instance to support method chaining.
         return *this;
     }
 
@@ -192,24 +192,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     response_builder& response_builder::add_ping(boost::uuids::uuid id, std::uint8_t exit_code) {
-        // Initialize an empty vector handling the localized response payload contents structure.
+        // Allocate an empty vector to store the contents of the ping response payload.
         std::vector<std::uint8_t> _buffer;
-        // Reserve pre-calculated memory size bounding payload size footprint parameters.
+        // Pre-allocate the memory needed for a standard 17-byte ping response.
         _buffer.reserve(17);
 
-        // Serialize tracking request target parameter variable matching response context context constraint.
+        // Copy the target 16-byte transaction UUID into the response payload.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Apply success operation result target indicating remote status condition tracking.
+        // Append the provided 1-byte exit status code to signify operation outcome.
         _buffer.push_back(exit_code);
 
-        // Require unique write token locking payload buffers tracking constraints logic variable mapping boundaries.
+        // Acquire an exclusive lock on the shared payload buffers to protect concurrent writes.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Commit newly evaluated payload response object moving array pointers ownership directly.
+        // Transfer ownership of the built response payload into the builder's local storage array.
         buffers_.push_back(std::move(_buffer));
-        // Keep tracking bytes bounds limits atomically incrementing current state parameter mapping value properly.
+        // Atomically update the total tracked memory footprint by the newly inserted 17 bytes.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Grant ongoing object chaining logic matching fluent architectural reference model properly.
+        // Return the current builder reference to facilitate chained function calls.
         return *this;
     }
 
@@ -219,24 +219,24 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     response_builder& response_builder::add_non_implemented(boost::uuids::uuid id) {
-        // Define temporary sequence container storing error state response payload.
+        // Allocate a temporary vector for holding the error response payload bytes.
         std::vector<std::uint8_t> _buffer;
-        // Reserve memory exactly matching the footprint of an error response block (17 bytes).
+        // Pre-allocate 17 bytes to match the exact size of a non-implemented response.
         _buffer.reserve(17);
 
-        // Embed UUID identifier connecting this payload with the original request parameters.
+        // Insert the 16-byte transaction UUID into the response payload buffer.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Emplace non-implemented exit code indicating the requested operation is unsupported.
+        // Append the specific exit code denoting that the requested opcode is not supported.
         _buffer.push_back(aurum::exit_code::non_implemented);
 
-        // Acquire lock ensuring thread-safe access to the shared payload array sequence.
+        // Acquire an exclusive lock on the shared payload array to prevent data races.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Emplace the new payload array shifting ownership to the builder container state.
+        // Transfer the temporary payload buffer into the builder's state using move semantics.
         buffers_.push_back(std::move(_buffer));
-        // Sum total sizing securely updating memory lengths tracker across threads.
+        // Atomically increment the total payload size counter by the 17 bytes added.
         total_payload_size_.fetch_add(17, std::memory_order_relaxed);
 
-        // Return active object instance enabling sequential payload operation chaining.
+        // Return a reference to this builder instance to allow method chaining.
         return *this;
     }
 
