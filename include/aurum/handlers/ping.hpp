@@ -29,8 +29,8 @@ namespace aurum::handlers {
      */
     inline handler_type get_ping_handler() {
         // Return a lambda capturing nothing, taking the required handler_type arguments.
-        return [](std::uint8_t opcode, message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
-            boost::ignore_unused(opcode, payload, session, state);
+        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
+            boost::ignore_unused(payload, session, state);
 
             // Ignore ping responses safely validating request mapping target
             if (type == response) {

@@ -26,6 +26,8 @@ namespace aurum {
      * @details Used by the protocol to map incoming frames to their respective state handlers.
      */
     enum op_code : std::uint8_t {
+        /** @brief Operational code representing an unsupported operation request mapping properly. */
+        op_non_implemented = 0,
         /** @brief Operational code representing a network ping request. */
         ping = 1,
         /** @brief Operational code for identifying network peer instances dynamically. */

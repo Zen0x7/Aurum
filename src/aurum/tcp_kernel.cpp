@@ -157,7 +157,7 @@ namespace aurum {
             const auto& _handler = state_->get_handlers()[_opcode];
 
             // Execute handler function passing parameters enabling correctly processing dynamic request targets accurately.
-            _handler(_opcode, _type, _response_builder, _transaction_id, _payload, session, state_);
+            _handler(_type, _response_builder, _transaction_id, _payload, session, state_);
 
             // Shift limits pointer moving towards next frame object correctly indexing bounds dynamically
             _offset += _request_length;
