@@ -21,21 +21,21 @@
 #include <aurum/tcp_client.hpp>
 
 TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
-    unsigned short port =
-            state->get_configuration().tcp_port_.load(std::memory_order_acquire);
+    const unsigned short _port =
+            state_->get_configuration().tcp_port_.load(std::memory_order_acquire);
 
-    auto _client = std::make_shared<aurum::tcp_client>();
+    const auto _client = std::make_shared<aurum::tcp_client>();
 
-    _client->connect("127.0.0.1", port);
+    _client->connect("127.0.0.1", _port);
 
     wait_until([this] {
-            return state->get_sessions().size() == 1;
+            return state_->get_sessions().size() == 1;
         });
 
-    ASSERT_EQ(state->get_sessions().size(), 1);
+    ASSERT_EQ(state_->get_sessions().size(), 1);
 
     // Generate a random UUID to track the test ping transaction uniquely.
-    boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
+    const boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
     // Construct request resolving serialized payload bounds format correctly.
     auto [_data, _frames_count] = _client->get_builder().add_ping(_transaction_id).get_data();
@@ -44,7 +44,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     _client->send(_data);
 
     // Process incoming responses targeting expected frames boundaries mappings naturally.
-    auto _response = _client->read(_frames_count);
+    const auto _response = _client->read(_frames_count);
 
     // The read buffer should contain at least the 4-byte header, 2-byte qty, and 2-byte crc.
     ASSERT_GE(_response.size(), 8);
@@ -96,25 +96,25 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     _client->disconnect();
 
     wait_until([this] {
-        return state->get_sessions().size() == 0;
+        return state_->get_sessions().size() == 0;
     });
 
-    ASSERT_EQ(state->get_sessions().size(), 0);
+    ASSERT_EQ(state_->get_sessions().size(), 0);
 }
 
 TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
-    unsigned short port =
-            state->get_configuration().tcp_port_.load(std::memory_order_acquire);
+    const unsigned short _port =
+            state_->get_configuration().tcp_port_.load(std::memory_order_acquire);
 
-    auto _client = std::make_shared<aurum::tcp_client>();
+    const auto _client = std::make_shared<aurum::tcp_client>();
 
-    _client->connect("127.0.0.1", port);
+    _client->connect("127.0.0.1", _port);
 
     wait_until([this] {
-            return state->get_sessions().size() == 1;
+            return state_->get_sessions().size() == 1;
         });
 
-    ASSERT_EQ(state->get_sessions().size(), 1);
+    ASSERT_EQ(state_->get_sessions().size(), 1);
 
     // Track multiple transaction identifiers
     boost::uuids::uuid _transaction_id_1 = boost::uuids::random_generator()();
@@ -137,7 +137,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     // Ensure adequate buffer dimension layout matching required minimal boundary sizes natively.
     ASSERT_GE(_response.size(), 8);
 
-    std::vector<boost::uuids::uuid> _expected_ids = { _transaction_id_1, _transaction_id_2, _transaction_id_3 };
+    const std::vector _expected_ids = { _transaction_id_1, _transaction_id_2, _transaction_id_3 };
 
     // Declare quantity received placeholder tracker
     std::uint16_t _response_quantity;
@@ -198,8 +198,8 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     _client->disconnect();
 
     wait_until([this] {
-        return state->get_sessions().size() == 0;
+        return state_->get_sessions().size() == 0;
     });
 
-    ASSERT_EQ(state->get_sessions().size(), 0);
+    ASSERT_EQ(state_->get_sessions().size(), 0);
 }

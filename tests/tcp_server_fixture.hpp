@@ -32,33 +32,33 @@
 
 class tcp_server_fixture : public ::testing::Test {
 protected:
-    std::unique_ptr<aurum::node> test_node;
-    std::shared_ptr<aurum::state> state;
-    std::thread runner_thread;
+    std::unique_ptr<aurum::node> test_node_;
+    std::shared_ptr<aurum::state> state_;
+    std::thread runner_thread_;
 
     void SetUp() override {
-        test_node = std::make_unique<aurum::node>();
-        state = test_node->get_state();
+        test_node_ = std::make_unique<aurum::node>();
+        state_ = test_node_->get_state();
 
-        state->get_configuration().tcp_port_.store(0);
-        state->get_configuration().threads_.store(1);
+        state_->get_configuration().tcp_port_.store(0);
+        state_->get_configuration().threads_.store(1);
 
-        runner_thread = std::thread([this] { test_node->run(); });
+        runner_thread_ = std::thread([this] { test_node_->run(); });
 
         wait_until([this] {
-            return state->get_configuration().tcp_ready_.load();
+            return state_->get_configuration().tcp_ready_.load();
         });
     }
 
     void TearDown() override {
-        test_node->stop();
-        if (runner_thread.joinable())
-            runner_thread.join();
+        test_node_->stop();
+        if (runner_thread_.joinable())
+            runner_thread_.join();
     }
 
     template<class Predicate>
     static void wait_until(Predicate condition,
-                           std::chrono::milliseconds timeout = std::chrono::seconds(2)) {
+                           const std::chrono::milliseconds timeout = std::chrono::seconds(2)) {
         const auto _start = std::chrono::steady_clock::now();
         while (!condition()) {
             if (std::chrono::steady_clock::now() - _start > timeout) {

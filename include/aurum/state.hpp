@@ -57,7 +57,7 @@ namespace aurum {
     using shared_state = std::shared_ptr<state>;
 
     /** @brief Type definition for operation handlers based on opcode. */
-    using handler_type = std::function<void(aurum::protocol::response_builder&, const transaction_id&, payload_buffer, shared_tcp_session, shared_state)>;
+    using handler_type = std::function<void(protocol::response_builder&, const transaction_id&, payload_buffer, shared_tcp_session, shared_state)>;
 
     /** @brief Container type mapping UUIDs to active TCP sessions. */
     using sessions_container_t = std::unordered_map<

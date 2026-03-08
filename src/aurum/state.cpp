@@ -28,10 +28,10 @@ namespace aurum {
      */
     state::state() {
         // Fill the entire handlers array with the default non-implemented fallback.
-        handlers_.fill(aurum::handlers::get_non_implemented_handler());
+        handlers_.fill(handlers::get_non_implemented_handler());
 
         // Bind opcode ping to the ping operational handler.
-        handlers_[op_code::ping] = aurum::handlers::get_ping_handler();
+        handlers_[ping] = handlers::get_ping_handler();
     }
 
     /**

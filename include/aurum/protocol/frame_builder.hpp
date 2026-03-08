@@ -80,7 +80,7 @@ namespace aurum::protocol {
     /**
      * @brief Builder specific to constructing client request frames.
      */
-    class request_builder : public base_builder {
+    class request_builder final : public base_builder {
     public:
         /**
          * @brief Adds a ping request to the internal buffer.
@@ -120,13 +120,13 @@ namespace aurum::protocol {
          * @brief Creates and returns a new request builder.
          * @return A request builder allocated on the stack.
          */
-        request_builder as_request() const;
+        [[nodiscard]] request_builder as_request() const;
 
         /**
          * @brief Creates and returns a new response builder.
          * @return A response builder allocated on the stack.
          */
-        response_builder as_response() const;
+        [[nodiscard]] response_builder as_response() const;
     };
 
 } // namespace aurum::protocol
