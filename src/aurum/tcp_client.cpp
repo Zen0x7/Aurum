@@ -26,7 +26,7 @@ namespace aurum {
     tcp_client::tcp_client()
         : io_context_(),
           socket_(io_context_),
-          request_builder_(std::make_shared<aurum::protocol::request_builder>()) {
+          request_builder_() {
     }
 
     /**
@@ -53,9 +53,9 @@ namespace aurum {
 
     /**
      * @brief Retrieves the underlying builder mapping incoming network structures.
-     * @return A shared pointer to the active request builder context.
+     * @return A reference to the active request builder context.
      */
-    std::shared_ptr<aurum::protocol::request_builder> tcp_client::get_builder() {
+    aurum::protocol::request_builder& tcp_client::get_builder() {
         // Expose underlying object managing internal sequence boundaries constraints mapping format directly.
         return request_builder_;
     }

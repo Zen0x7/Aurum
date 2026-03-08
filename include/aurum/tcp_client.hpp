@@ -37,7 +37,7 @@ namespace aurum {
         boost::asio::ip::tcp::socket socket_;
 
         /** @brief Internal request builder for constructing payloads. */
-        std::shared_ptr<aurum::protocol::request_builder> request_builder_;
+        aurum::protocol::request_builder request_builder_;
 
     public:
         /**
@@ -59,9 +59,9 @@ namespace aurum {
 
         /**
          * @brief Retrieves the underlying builder mapping incoming network structures.
-         * @return A shared pointer to the active request builder context.
+         * @return A reference to the active request builder context.
          */
-        std::shared_ptr<aurum::protocol::request_builder> get_builder();
+        aurum::protocol::request_builder& get_builder();
 
         /**
          * @brief Sends the binary payload across the connected socket interface.

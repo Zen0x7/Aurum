@@ -38,7 +38,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
     // Construct request resolving serialized payload bounds format correctly.
-    auto [_data, _frames_count] = _client->get_builder()->add_ping(_transaction_id).get_data();
+    auto [_data, _frames_count] = _client->get_builder().add_ping(_transaction_id).get_data();
 
     // Send payload matching defined connection interface rules completely cleanly.
     _client->send(_data);
@@ -123,7 +123,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
 
     // Construct the bundled sequence request tracking frame dimension mappings securely.
     auto [_data, _frames_count] = _client->get_builder()
-        ->add_ping(_transaction_id_1)
+        .add_ping(_transaction_id_1)
         .add_ping(_transaction_id_2)
         .add_ping(_transaction_id_3)
         .get_data();
