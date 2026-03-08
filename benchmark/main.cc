@@ -15,8 +15,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #include <benchmark/benchmark.h>
+#include <aurum/node.hpp>
 #include <aurum/state.hpp>
-#include <aurum/tcp_listener.hpp>
 
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -28,32 +28,29 @@
 #include <boost/crc.hpp>
 
 #include <thread>
+#include <mutex>
+#include <memory>
 #include <aurum/protocol/op_code.hpp>
 
 using namespace aurum;
 
 // Global context required to run the server in the background for benchmarks.
 struct server_fixture {
-    boost::asio::io_context io_context_;
+    std::unique_ptr<node> node_;
     std::shared_ptr<state> state_;
-    std::shared_ptr<tcp_listener> listener_;
-    std::vector<std::thread> threads_;
+    std::thread runner_thread_;
     int thread_count_;
 
-    server_fixture(int thread_count = 1) : state_(std::make_shared<state>()), thread_count_(thread_count) {
+    server_fixture(int thread_count = 1) : node_(std::make_unique<node>()), thread_count_(thread_count) {
+        state_ = node_->get_state();
+
         // Start on an ephemeral port.
         state_->get_configuration().tcp_port_.store(0, std::memory_order_release);
         state_->get_configuration().threads_.store(thread_count, std::memory_order_release);
 
-        listener_ = std::make_shared<tcp_listener>(io_context_, state_);
-        listener_->start();
-
-        // Run the io_context on background threads.
-        for (int i = 0; i < thread_count_; ++i) {
-            threads_.emplace_back([this]() {
-                io_context_.run();
-            });
-        }
+        runner_thread_ = std::thread([this]() {
+            node_->run();
+        });
 
         // Wait until the server binds and the port is set.
         while (!state_->get_configuration().tcp_ready_.load(std::memory_order_acquire)) {
@@ -62,11 +59,9 @@ struct server_fixture {
     }
 
     ~server_fixture() {
-        io_context_.stop();
-        for (auto& thread : threads_) {
-            if (thread.joinable()) {
-                thread.join();
-            }
+        node_->stop();
+        if (runner_thread_.joinable()) {
+            runner_thread_.join();
         }
     }
 
