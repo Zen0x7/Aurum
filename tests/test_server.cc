@@ -18,18 +18,15 @@
 #include <boost/uuid/random_generator.hpp>
 #include <boost/crc.hpp>
 #include <aurum/protocol.hpp>
+#include <aurum/tcp_client.hpp>
 
 TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
-    boost::asio::io_context client_io;
-    boost::asio::ip::tcp::socket socket(client_io);
-
     unsigned short port =
             state->get_configuration().tcp_port_.load(std::memory_order_acquire);
 
-    socket.connect({
-        boost::asio::ip::address_v4::loopback(),
-        port
-    });
+    auto _client = std::make_shared<aurum::tcp_client>();
+
+    _client->connect("127.0.0.1", port);
 
     wait_until([this] {
             return state->get_sessions().size() == 1;
@@ -40,42 +37,30 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Generate a random UUID to track the test ping transaction uniquely.
     boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
-    // Instantiate a frame builder to construct the ping request payload.
-    aurum::protocol::frame_builder _frame_builder;
-    // Extract a request-specific builder to format outgoing client messages.
-    auto _request_builder = _frame_builder.as_request();
-    // Insert a new ping command tagged with the generated tracking identifier.
-    _request_builder.add_ping(_transaction_id);
+    // Construct request resolving serialized payload bounds format correctly.
+    auto [_data, _frames_count] = _client->get_builder().add_ping(_transaction_id).get_data();
 
-    // Extract the complete binary payload ready for network transmission.
-    auto _payload = _request_builder.get_buffers();
+    // Send payload matching defined connection interface rules completely cleanly.
+    _client->send(_data);
 
-    // Dump actual serialized payload through TCP sequence pipeline
-    boost::asio::write(socket, boost::asio::buffer(_payload));
+    // Process incoming responses targeting expected frames boundaries mappings naturally.
+    auto _response = _client->read(_frames_count);
 
-    // Declare placeholder buffer integer for received server bound wrapper length
-    uint32_t _response_header_length = 0;
+    // The read buffer should contain at least the 4-byte header, 2-byte qty, and 2-byte crc.
+    ASSERT_GE(_response.size(), 8);
 
-    // Read the exact 4 bytes of the header to discover the body size.
-    boost::asio::read(socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
-
-    // Reformat incoming header length from network little-endian to native architecture.
+    // Create pointer tracking initial sequence limit bounds representing payload header accurately.
+    std::uint32_t _response_header_length;
+    // Extract actual parsed frame dimension constraints parsing memory format strictly.
+    std::memcpy(&_response_header_length, _response.data(), sizeof(_response_header_length));
+    // Enforce correct processor alignment ensuring little-endian bounds parsing logic naturally.
     boost::endian::little_to_native_inplace(_response_header_length);
-
-    // Prepare receiving target dynamic array based off received length boundary
-    std::vector<uint8_t> _response_body(_response_header_length);
-
-    // Flush rest of the network stream frame sequence down towards local buffer space
-    boost::asio::read(socket, boost::asio::buffer(_response_body));
-
-    // Verify the response body is large enough to contain at least the quantity and CRC.
-    ASSERT_GE(_response_body.size(), 4); // at least qty + crc
 
     // Declare quantity received placeholder tracker
     std::uint16_t _response_quantity;
 
     // Extract the number of elements bundled in the server response frame.
-    std::memcpy(&_response_quantity, _response_body.data(), sizeof(_response_quantity));
+    std::memcpy(&_response_quantity, _response.data() + 4, sizeof(_response_quantity));
 
     // Convert the elements quantity from little-endian back to native architecture.
     boost::endian::little_to_native_inplace(_response_quantity);
@@ -87,7 +72,7 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     std::uint16_t _response_length;
 
     // Copy the length of the first parsed response from the payload structure.
-    std::memcpy(&_response_length, _response_body.data() + 2, sizeof(_response_length));
+    std::memcpy(&_response_length, _response.data() + 6, sizeof(_response_length));
 
     // Correct memory formatting for native little endian processing unit architectures
     boost::endian::little_to_native_inplace(_response_length);
@@ -99,16 +84,16 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     boost::uuids::uuid _response_transaction_id;
 
     // Extract the 16-byte transaction UUID from the incoming server payload.
-    std::memcpy(_response_transaction_id.data, _response_body.data() + 4, 16);
+    std::memcpy(_response_transaction_id.data, _response.data() + 8, 16);
 
     // Cross-validate that returned ID exactly equals source request tracking token element
     ASSERT_EQ(_transaction_id, _response_transaction_id);
 
     // Validate the response status confirms the ping operation succeeded successfully.
-    ASSERT_EQ(_response_body[20], aurum::exit_code::success);
+    ASSERT_EQ(_response[24], aurum::exit_code::success);
 
     // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
-    socket.close();
+    _client->disconnect();
 
     wait_until([this] {
         return state->get_sessions().size() == 0;
@@ -118,16 +103,12 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
 }
 
 TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
-    boost::asio::io_context client_io;
-    boost::asio::ip::tcp::socket socket(client_io);
-
     unsigned short port =
             state->get_configuration().tcp_port_.load(std::memory_order_acquire);
 
-    socket.connect({
-        boost::asio::ip::address_v4::loopback(),
-        port
-    });
+    auto _client = std::make_shared<aurum::tcp_client>();
+
+    _client->connect("127.0.0.1", port);
 
     wait_until([this] {
             return state->get_sessions().size() == 1;
@@ -140,49 +121,29 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     boost::uuids::uuid _transaction_id_2 = boost::uuids::random_generator()();
     boost::uuids::uuid _transaction_id_3 = boost::uuids::random_generator()();
 
-    // Instantiate a frame builder to construct a bundled sequence of requests.
-    aurum::protocol::frame_builder _frame_builder;
-    auto _request_builder = _frame_builder.as_request();
+    // Construct the bundled sequence request tracking frame dimension mappings securely.
+    auto [_data, _frames_count] = _client->get_builder()
+        .add_ping(_transaction_id_1)
+        .add_ping(_transaction_id_2)
+        .add_ping(_transaction_id_3)
+        .get_data();
 
-    // Enqueue three unique ping requests dynamically into the shared builder frame.
-    _request_builder.add_ping(_transaction_id_1);
-    _request_builder.add_ping(_transaction_id_2);
-    _request_builder.add_ping(_transaction_id_3);
+    // Send payload traversing generated constraints mappings cleanly.
+    _client->send(_data);
 
-    // Resolve the constructed payload dynamically returning exact binary layout sequence.
-    auto _payload = _request_builder.get_buffers();
+    // Process all incoming multiplexed response mappings strictly cleanly.
+    auto _response = _client->read(_frames_count);
 
-    // Dump actual serialized payload through TCP sequence pipeline
-    boost::asio::write(socket, boost::asio::buffer(_payload));
+    // Ensure adequate buffer dimension layout matching required minimal boundary sizes natively.
+    ASSERT_GE(_response.size(), 8);
 
-    // Verify response frame accurately reflects the multiplexed structure logic.
-    // Since the server processes the entire frame and returns a single frame with multiple responses,
-    // we should read the response once and parse the responses within the frame.
     std::vector<boost::uuids::uuid> _expected_ids = { _transaction_id_1, _transaction_id_2, _transaction_id_3 };
-
-    // Declare placeholder buffer integer for received server bound wrapper length
-    uint32_t _response_header_length = 0;
-
-    // Trigger synchronous stream fetch extracting just the length marker explicitly.
-    boost::asio::read(socket, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
-
-    // Reformat incoming network format into native system integer logic structure.
-    boost::endian::little_to_native_inplace(_response_header_length);
-
-    // Prepare receiving target dynamic array based off received length boundary
-    std::vector<uint8_t> _response_body(_response_header_length);
-
-    // Flush rest of the network stream frame sequence down towards local buffer space
-    boost::asio::read(socket, boost::asio::buffer(_response_body));
-
-    // Enforce minimal expected memory layout preventing out of bounds parsing routines.
-    ASSERT_GE(_response_body.size(), 4); // at least qty + crc
 
     // Declare quantity received placeholder tracker
     std::uint16_t _response_quantity;
 
     // Parse the total count of sequential elements safely handled by the remote host.
-    std::memcpy(&_response_quantity, _response_body.data(), sizeof(_response_quantity));
+    std::memcpy(&_response_quantity, _response.data() + 4, sizeof(_response_quantity));
 
     // Format structural boundary size tracking native integer sequence logic layout.
     boost::endian::little_to_native_inplace(_response_quantity);
@@ -190,7 +151,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     // Assert the frame effectively multiplexed multiple requests properly into responses.
     ASSERT_EQ(_response_quantity, 3);
 
-    size_t _offset = sizeof(_response_quantity);
+    size_t _offset = 4 + sizeof(_response_quantity);
 
     std::vector<std::uint16_t> _response_lengths;
 
@@ -200,7 +161,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
         std::uint16_t _response_length;
 
         // Copy raw memory pointer length dynamically reflecting current parsing bound.
-        std::memcpy(&_response_length, _response_body.data() + _offset, sizeof(_response_length));
+        std::memcpy(&_response_length, _response.data() + _offset, sizeof(_response_length));
 
         // Correct memory formatting for native little endian processing unit architectures
         boost::endian::little_to_native_inplace(_response_length);
@@ -218,7 +179,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
         boost::uuids::uuid _response_transaction_id;
 
         // Traverse buffer reading the parsed UUID identifying active memory parameter array.
-        std::memcpy(_response_transaction_id.data, _response_body.data() + _offset, 16);
+        std::memcpy(_response_transaction_id.data, _response.data() + _offset, 16);
 
         // Cross-validate that returned ID exactly equals source request tracking token element
         ASSERT_EQ(_expected_ids[_i], _response_transaction_id);
@@ -227,14 +188,14 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
         _offset += 16;
 
         // Confirm ping target explicitly returned successful remote operation completion.
-        ASSERT_EQ(_response_body[_offset], aurum::exit_code::success);
+        ASSERT_EQ(_response[_offset], aurum::exit_code::success);
 
         // Adjust tracking index offset to process trailing checksum values securely.
         _offset += 1;
     }
 
     // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
-    socket.close();
+    _client->disconnect();
 
     wait_until([this] {
         return state->get_sessions().size() == 0;

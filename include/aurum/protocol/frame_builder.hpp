@@ -63,6 +63,18 @@ namespace aurum::protocol {
          * @return A vector of bytes containing the fully serialized frame(s).
          */
         std::vector<std::uint8_t> get_buffers();
+
+        /**
+         * @brief Builds and returns a unified buffer containing all serialized frames along with the frame count.
+         * @details Computes necessary sizes, splits payloads if max frame bounds are exceeded, and generates the final output.
+         * @return A pair where the first element is the serialized buffer and the second element is the number of frames generated.
+         */
+        std::pair<std::vector<std::uint8_t>, std::size_t> get_data();
+
+        /**
+         * @brief Resets the builder state clearing all internal payloads safely.
+         */
+        void flush();
     };
 
     /**

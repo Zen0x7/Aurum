@@ -43,16 +43,29 @@ namespace aurum::protocol {
      * @return A vector of bytes containing the fully serialized frame(s).
      */
     std::vector<std::uint8_t> base_builder::get_buffers() {
+        // Return only the fully serialized sequence string buffering contents representation directly.
+        return get_data().first;
+    }
+
+    /**
+     * @brief Builds and returns a unified buffer containing all serialized frames along with the frame count.
+     * @details Computes necessary sizes, splits payloads if max frame bounds are exceeded, and generates the final output.
+     * @return A pair where the first element is the serialized buffer and the second element is the number of frames generated.
+     */
+    std::pair<std::vector<std::uint8_t>, std::size_t> base_builder::get_data() {
         // Acquire a shared read lock to prevent concurrent modifications during parsing.
         std::shared_lock _lock(shared_buffers_mutex_);
 
         // Ensure there is at least one payload to avoid serializing an empty frame.
         if (buffers_.empty()) {
-            return {};
+            return {{}, 0};
         }
 
         // Initialize the output buffer where the serialized frames will be written.
         std::vector<std::uint8_t> _output_buffer;
+
+        // Track the total number of frames successfully serialized locally.
+        std::size_t _frames_count = 0;
 
         // Define maximum allowed requests in a single frame payload (fits in 16-bit uint).
         constexpr std::size_t _max_requests_per_frame = 65535; // std::numeric_limits<std::uint16_t>::max()
@@ -152,10 +165,25 @@ namespace aurum::protocol {
             auto* _crc_ptr = reinterpret_cast<const std::uint8_t*>(&_crc_val);
             // Append the checksum bytes at the very end of the constructed frame chunk.
             _output_buffer.insert(_output_buffer.end(), _crc_ptr, _crc_ptr + sizeof(_crc_val));
+
+            // Increment the counter tracking the successful frame generated block cleanly.
+            _frames_count++;
         }
 
-        // Return the fully serialized buffer containing all assembled frame chunks.
-        return _output_buffer;
+        // Return the compiled serialized array representation of the complete transaction and its frame quantity natively.
+        return std::make_pair(_output_buffer, _frames_count);
+    }
+
+    /**
+     * @brief Resets the builder state clearing all internal payloads safely.
+     */
+    void base_builder::flush() {
+        // Require exclusive lock preventing state reads while clearing buffers map securely.
+        std::unique_lock _lock(shared_buffers_mutex_);
+        // Truncate dynamically allocated inner buffers vector avoiding memory dangling limits cleanly.
+        buffers_.clear();
+        // Return aggregate memory boundary tracking integer to absolute initial sequence mapping natively.
+        total_payload_size_.store(0, std::memory_order_relaxed);
     }
 
     /**
