@@ -194,11 +194,13 @@ namespace aurum::protocol {
     request_builder& request_builder::add_ping(boost::uuids::uuid id) {
         // Allocate an empty vector for storing the newly requested ping payload.
         std::vector<std::uint8_t> _buffer;
-        // Pre-allocate exactly 17 bytes to prevent memory reallocation during construction.
-        _buffer.reserve(17);
+        // Pre-allocate exactly 18 bytes to prevent memory reallocation during construction.
+        _buffer.reserve(18);
 
         // Add the explicit ping opcode byte to the beginning of the payload.
         _buffer.push_back(ping);
+        // Add the request message type byte.
+        _buffer.push_back(message_type::request);
         // Append the 16-byte UUID referencing the current operation to the payload buffer.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 
@@ -206,10 +208,42 @@ namespace aurum::protocol {
         std::unique_lock _lock(shared_buffers_mutex_);
         // Emplace the newly constructed ping payload into the internal storage using move semantics.
         buffers_.push_back(std::move(_buffer));
-        // Atomically increase the global payload counter by the exact 17 bytes appended.
-        total_payload_size_.fetch_add(17, std::memory_order_relaxed);
+        // Atomically increase the global payload counter by the exact 18 bytes appended.
+        total_payload_size_.fetch_add(18, std::memory_order_relaxed);
 
         // Return a reference to the builder instance to support method chaining.
+        return *this;
+    }
+
+    /**
+     * @brief Adds an identify request containing the local node identifier.
+     * @param node_id The 16-byte identifier representing the active node context.
+     * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    request_builder& request_builder::add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id) {
+        // Allocate a dedicated array matching identify payload memory footprint structures securely.
+        std::vector<std::uint8_t> _buffer;
+        // Pre-allocate correctly evaluating bounding mapping length explicitly avoiding bottlenecks.
+        _buffer.reserve(34); // opcode (1) + type (1) + tx_id (16) + node_id (16) = 34
+
+        // Add identify target opcode safely.
+        _buffer.push_back(identify);
+        // Map transmission origin logically to request format.
+        _buffer.push_back(message_type::request);
+        // Append transaction matching identifier natively.
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+        // Append local node identifier target accurately.
+        _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
+
+        // Request exclusive access securely mapped tracking objects globally.
+        std::unique_lock _lock(shared_buffers_mutex_);
+        // Emplace configured identify bounds structurally mapping target objects safely.
+        buffers_.push_back(std::move(_buffer));
+        // Push evaluated footprint updating tracking logic correctly explicitly mapped.
+        total_payload_size_.fetch_add(34, std::memory_order_relaxed);
+
+        // Chain caller object properly cleanly mapping execution targets properly.
         return *this;
     }
 
@@ -222,9 +256,13 @@ namespace aurum::protocol {
     response_builder& response_builder::add_ping(boost::uuids::uuid id, std::uint8_t exit_code) {
         // Allocate an empty vector to store the contents of the ping response payload.
         std::vector<std::uint8_t> _buffer;
-        // Pre-allocate the memory needed for a standard 17-byte ping response.
-        _buffer.reserve(17);
+        // Pre-allocate the memory needed for a standard 19-byte ping response.
+        _buffer.reserve(19);
 
+        // Add the ping opcode byte to the beginning of the payload.
+        _buffer.push_back(ping);
+        // Add the response message type byte.
+        _buffer.push_back(message_type::response);
         // Copy the target 16-byte transaction UUID into the response payload.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
         // Append the provided 1-byte exit status code to signify operation outcome.
@@ -234,24 +272,61 @@ namespace aurum::protocol {
         std::unique_lock _lock(shared_buffers_mutex_);
         // Transfer ownership of the built response payload into the builder's local storage array.
         buffers_.push_back(std::move(_buffer));
-        // Atomically update the total tracked memory footprint by the newly inserted 17 bytes.
-        total_payload_size_.fetch_add(17, std::memory_order_relaxed);
+        // Atomically update the total tracked memory footprint by the newly inserted 19 bytes.
+        total_payload_size_.fetch_add(19, std::memory_order_relaxed);
 
         // Return the current builder reference to facilitate chained function calls.
         return *this;
     }
 
     /**
+     * @brief Adds an identify response containing the node peer tracking context.
+     * @param id The transaction ID to respond to mapping request properly.
+     * @param node_id The target local node identifier structurally mapped.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    response_builder& response_builder::add_identify(boost::uuids::uuid id, boost::uuids::uuid node_id) {
+        // Allocate an array mapping response identity correctly checking structural limits.
+        std::vector<std::uint8_t> _buffer;
+        // Reserve exact mapped space mapping boundaries natively completely safely.
+        _buffer.reserve(34); // opcode (1) + type (1) + tx_id (16) + node_id (16) = 34
+
+        // Append explicit identify target mapped opcode correctly.
+        _buffer.push_back(identify);
+        // Attach valid transmission response mapped token efficiently.
+        _buffer.push_back(message_type::response);
+        // Copy transaction context evaluating parameters accurately natively.
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+        // Attach node structural identifiers safely tracking payload content directly.
+        _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
+
+        // Protect shared mapping references safely binding execution completely securely.
+        std::unique_lock _lock(shared_buffers_mutex_);
+        // Attach constructed sequence block dynamically matching buffer target layout accurately.
+        buffers_.push_back(std::move(_buffer));
+        // Expand tracking payload variables mapping specific footprint allocations correctly natively.
+        total_payload_size_.fetch_add(34, std::memory_order_relaxed);
+
+        // Route self memory pointer completely executing chains reliably.
+        return *this;
+    }
+
+    /**
      * @brief Adds a non-implemented error response to the internal buffer.
+     * @param op The operational code that triggered the error.
      * @param id The transaction ID to respond to.
      * @return A reference to the active builder instance for method chaining.
      */
-    response_builder& response_builder::add_non_implemented(boost::uuids::uuid id) {
+    response_builder& response_builder::add_non_implemented(std::uint8_t op, boost::uuids::uuid id) {
         // Allocate a temporary vector for holding the error response payload bytes.
         std::vector<std::uint8_t> _buffer;
-        // Pre-allocate 17 bytes to match the exact size of a non-implemented response.
-        _buffer.reserve(17);
+        // Pre-allocate 19 bytes to match the exact size of a non-implemented response.
+        _buffer.reserve(19);
 
+        // Add the original opcode byte to the beginning of the payload.
+        _buffer.push_back(op);
+        // Add the response message type byte.
+        _buffer.push_back(message_type::response);
         // Insert the 16-byte transaction UUID into the response payload buffer.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
         // Append the specific exit code denoting that the requested opcode is not supported.
@@ -261,8 +336,8 @@ namespace aurum::protocol {
         std::unique_lock _lock(shared_buffers_mutex_);
         // Transfer the temporary payload buffer into the builder's state using move semantics.
         buffers_.push_back(std::move(_buffer));
-        // Atomically increment the total payload size counter by the 17 bytes added.
-        total_payload_size_.fetch_add(17, std::memory_order_relaxed);
+        // Atomically increment the total payload size counter by the 19 bytes added.
+        total_payload_size_.fetch_add(19, std::memory_order_relaxed);
 
         // Return a reference to this builder instance to allow method chaining.
         return *this;

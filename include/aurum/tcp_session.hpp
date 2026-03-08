@@ -44,6 +44,9 @@ namespace aurum {
         /** @brief Shared reference to the central application state. */
         std::shared_ptr<state> state_;
 
+        /** @brief Identifier of the remote node associated with this connection. */
+        boost::uuids::uuid node_id_;
+
         /** @brief Protocol parser associated exclusively with this session. */
         std::shared_ptr<tcp_kernel> kernel_;
     public:
@@ -70,6 +73,18 @@ namespace aurum {
          * @return The UUID assigned during initialization.
          */
         boost::uuids::uuid get_id() const;
+
+        /**
+         * @brief Gets the node identifier bound to this specific network link.
+         * @return A valid UUID struct referencing the active peer node accurately.
+         */
+        boost::uuids::uuid get_node_id() const;
+
+        /**
+         * @brief Binds a remote node identifier to this currently active network session securely.
+         * @param node_id The valid 16-byte node identification struct mapping.
+         */
+        void set_node_id(boost::uuids::uuid node_id);
     private:
         /**
          * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.

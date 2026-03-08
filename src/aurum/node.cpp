@@ -17,6 +17,8 @@
 #include <aurum/node.hpp>
 #include <boost/program_options.hpp>
 #include <boost/asio/signal_set.hpp>
+#include <boost/asio/connect.hpp>
+#include <aurum/tcp_session.hpp>
 
 namespace aurum {
 
@@ -120,6 +122,108 @@ int node::run() {
 void node::stop() {
     // Stop the IO context preventing further async operations.
     io_context_.stop();
+}
+
+/**
+ * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
+ * @param host The remote peer IP address structurally mapped string.
+ * @param port The target destination listener port integer properly.
+ * @return True if connection was completely established natively securely.
+ */
+bool node::connect(const std::string& host, unsigned short port) {
+    // Instantiate target socket mapped natively against core IO handler correctly safely.
+    boost::asio::ip::tcp::socket _socket(io_context_);
+    // Resolve connection endpoints mapping natively securely logically properly reliably.
+    boost::asio::ip::tcp::resolver _resolver(io_context_);
+    // Extract endpoint targets evaluating bounds mapping logically explicitly reliably structurally.
+    boost::system::error_code _resolve_ec;
+    // Discover connection bounds accurately checking structural references properly securely.
+    auto _endpoints = _resolver.resolve(host, std::to_string(port), _resolve_ec);
+
+    // Return early if the resolution failed.
+    if (_resolve_ec) {
+        return false;
+    }
+
+    // Connect sequentially to the resolved endpoints.
+    boost::system::error_code _connect_ec;
+    boost::asio::connect(_socket, _endpoints, _connect_ec);
+
+    // Return early if the connection failed.
+    if (_connect_ec) {
+        return false;
+    }
+
+    // Create a new session with the newly connected socket.
+    auto _session = std::make_shared<tcp_session>(std::move(_socket), state_);
+
+    // Register the session in the shared state map.
+    if (!state_->add_session(_session)) {
+        return false;
+    }
+
+    // Prepare a builder to construct an identify frame request.
+    aurum::protocol::frame_builder _builder;
+    auto _request = _builder.as_request();
+
+    // Attach the current node identifier inside an identify opcode block.
+    _request.add_identify(state_->get_node_id());
+
+    // Flush the built frames structurally to a memory vector.
+    auto [_buffer, _count] = _request.get_data();
+
+    // Push the resulting byte array through the socket output stream natively.
+    _session->send(std::make_shared<std::vector<std::uint8_t>>(std::move(_buffer)));
+
+    // Begin the asynchronous payload parsing flow.
+    _session->start();
+
+    return true;
+}
+
+/**
+ * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.
+ * @param remote_node_id The 16-byte identifier representing the active node context safely.
+ */
+void node::disconnect(boost::uuids::uuid remote_node_id) {
+    // Array collecting all matching node IDs targets mapping properly.
+    std::vector<boost::uuids::uuid> _sessions_to_remove;
+
+    // Acquire lock and safely identify matching elements gracefully mapped securely safely natively.
+    {
+        std::unique_lock _lock(state_->get_sessions_mutex());
+        for (const auto& [_id, _session] : state_->get_sessions()) {
+            if (_session->get_node_id() == remote_node_id) {
+                _sessions_to_remove.push_back(_id);
+            }
+        }
+    }
+
+    // Safely iterate removing instances securely natively implicitly handling limits appropriately.
+    for (const auto& _id : _sessions_to_remove) {
+        state_->remove_session(_id);
+    }
+}
+
+/**
+ * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
+ */
+void node::disconnect_all() {
+    // Local list isolating targeting mappings reliably.
+    std::vector<boost::uuids::uuid> _sessions_to_remove;
+
+    // Isolate lookup handling lock gracefully accurately.
+    {
+        std::unique_lock _lock(state_->get_sessions_mutex());
+        for (const auto& [_id, _session] : state_->get_sessions()) {
+            _sessions_to_remove.push_back(_id);
+        }
+    }
+
+    // Eliminate collected map components iteratively smoothly explicitly accurately completely.
+    for (const auto& _id : _sessions_to_remove) {
+        state_->remove_session(_id);
+    }
 }
 
 /**

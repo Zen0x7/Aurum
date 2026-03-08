@@ -14,12 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef AURUM_PROTOCOL_HPP
-#define AURUM_PROTOCOL_HPP
+#ifndef AURUM_MESSAGE_TYPE_HPP
+#define AURUM_MESSAGE_TYPE_HPP
 
-#include <aurum/protocol/op_code.hpp>
-#include <aurum/protocol/message_type.hpp>
-#include <aurum/protocol/exit_code.hpp>
-#include <aurum/protocol/frame_builder.hpp>
+#include <cstdint>
 
-#endif // AURUM_PROTOCOL_HPP
+namespace aurum {
+
+    /**
+     * @brief Defines message types for network payloads.
+     * @details Used by the protocol to distinguish between a request and a response.
+     */
+    enum message_type : std::uint8_t {
+        /** @brief Message type representing a network request. */
+        request = 0,
+        /** @brief Message type representing a network response. */
+        response = 1
+    };
+
+}
+
+#endif // AURUM_MESSAGE_TYPE_HPP

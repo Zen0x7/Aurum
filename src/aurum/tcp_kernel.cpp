@@ -126,8 +126,8 @@ namespace aurum {
                 return nullptr;
             }
 
-            // Verify bounding sizes enforce minimum memory capacity bounds structurally for identifier parsing
-            if (_request_length < sizeof(std::uint8_t) + 16) {
+            // Verify bounding sizes enforce minimum memory capacity bounds structurally for identifier parsing (opcode + type + uuid = 18 bytes)
+            if (_request_length < sizeof(std::uint8_t) * 2 + 16) {
                 // Return safely breaking mapping loop ensuring correct payload access sizes structure
                 return nullptr;
             }
@@ -135,17 +135,20 @@ namespace aurum {
             // Extract opcode parameter extracting exact operational target mapping request command type
             std::uint8_t _opcode = frame->data()[_offset];
 
+            // Extract message type mapping command direction
+            auto _type = static_cast<message_type>(frame->data()[_offset + sizeof(std::uint8_t)]);
+
             // Setup identifier target instance representing transaction mapping unique operation
             transaction_id _transaction_id;
 
             // Copy identifier safely memory bounds evaluating parameters extracting exact transaction reference
-            std::memcpy(_transaction_id.data, frame->data() + _offset + sizeof(std::uint8_t), 16);
+            std::memcpy(_transaction_id.data, frame->data() + _offset + sizeof(std::uint8_t) * 2, 16);
 
             // Move offset pointer dynamically mapping current bounds safely towards inner parameters target
-            std::size_t _payload_offset = _offset + sizeof(std::uint8_t) + 16;
+            std::size_t _payload_offset = _offset + sizeof(std::uint8_t) * 2 + 16;
 
             // Compute payload bounds safely tracking exact inner boundary evaluating length array accurately
-            std::size_t _payload_length = _request_length - (sizeof(std::uint8_t) + 16);
+            std::size_t _payload_length = _request_length - (sizeof(std::uint8_t) * 2 + 16);
 
             // Construct bounded payload wrapper object handling data parsing correctly safely accessing parameters
             payload_buffer _payload(frame->data() + _payload_offset, _payload_length);
@@ -154,7 +157,7 @@ namespace aurum {
             const auto& _handler = state_->get_handlers()[_opcode];
 
             // Execute handler function passing parameters enabling correctly processing dynamic request targets accurately.
-            _handler(_response_builder, _transaction_id, _payload, session, state_);
+            _handler(_type, _response_builder, _transaction_id, _payload, session, state_);
 
             // Shift limits pointer moving towards next frame object correctly indexing bounds dynamically
             _offset += _request_length;

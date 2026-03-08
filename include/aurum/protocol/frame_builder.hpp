@@ -23,6 +23,7 @@
 #include <atomic>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
+#include <aurum/protocol/message_type.hpp>
 
 namespace aurum::protocol {
 
@@ -88,6 +89,14 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         request_builder& add_ping(boost::uuids::uuid id = boost::uuids::random_generator()());
+
+        /**
+         * @brief Adds an identify request containing the local node identifier.
+         * @param node_id The 16-byte identifier representing the active node context.
+         * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        request_builder& add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id = boost::uuids::random_generator()());
     };
 
     /**
@@ -104,11 +113,20 @@ namespace aurum::protocol {
         response_builder& add_ping(boost::uuids::uuid id, std::uint8_t exit_code);
 
         /**
+         * @brief Adds an identify response containing the node peer tracking context.
+         * @param id The transaction ID to respond to mapping request properly.
+         * @param node_id The target local node identifier structurally mapped.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        response_builder& add_identify(boost::uuids::uuid id, boost::uuids::uuid node_id);
+
+        /**
          * @brief Adds a non-implemented error response to the internal buffer.
+         * @param op The operational code that triggered the error.
          * @param id The transaction ID to respond to.
          * @return A reference to the active builder instance for method chaining.
          */
-        response_builder& add_non_implemented(boost::uuids::uuid id);
+        response_builder& add_non_implemented(std::uint8_t op, boost::uuids::uuid id);
     };
 
     /**

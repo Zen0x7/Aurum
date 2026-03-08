@@ -27,6 +27,7 @@
 #include <boost/asio/write.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/bind_executor.hpp>
+#include <boost/uuid/nil_generator.hpp>
 
 namespace aurum {
     /**
@@ -37,6 +38,7 @@ namespace aurum {
     tcp_session::tcp_session(boost::asio::ip::tcp::socket socket,
                              std::shared_ptr<state> state) : id_(boost::uuids::random_generator()()),
                                                              state_(std::move(state)),
+                                                             node_id_(boost::uuids::nil_uuid()),
                                                              kernel_(std::make_shared<tcp_kernel>(state_)),
                                                              socket_(std::move(socket)),
                                                              strand_(make_strand(socket_.get_executor())) {
@@ -150,6 +152,24 @@ namespace aurum {
     boost::uuids::uuid tcp_session::get_id() const {
         // Return the underlying boost UUID structure.
         return id_;
+    }
+
+    /**
+     * @brief Gets the node identifier bound to this specific network link.
+     * @return A valid UUID struct referencing the active peer node accurately.
+     */
+    boost::uuids::uuid tcp_session::get_node_id() const {
+        // Evaluate natively stored internal object securely referencing mapping identity completely.
+        return node_id_;
+    }
+
+    /**
+     * @brief Binds a remote node identifier to this currently active network session securely.
+     * @param node_id The valid 16-byte node identification struct mapping.
+     */
+    void tcp_session::set_node_id(boost::uuids::uuid node_id) {
+        // Securely copy provided active reference struct into object internal boundaries exactly.
+        node_id_ = node_id;
     }
 
     /**

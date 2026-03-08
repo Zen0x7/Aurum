@@ -26,12 +26,15 @@ namespace aurum {
     /**
      * @brief Constructs a new state object and initializes default handlers.
      */
-    state::state() {
+    state::state() : node_id_(boost::uuids::random_generator()()) {
         // Fill the entire handlers array with the default non-implemented fallback.
         handlers_.fill(handlers::get_non_implemented_handler());
 
         // Bind opcode ping to the ping operational handler.
         handlers_[ping] = handlers::get_ping_handler();
+
+        // Bind opcode identify mapping dynamic discovery logic safely.
+        handlers_[identify] = handlers::get_identify_handler();
     }
 
     /**
@@ -53,12 +56,30 @@ namespace aurum {
     }
 
     /**
+     * @brief Retrieves the unique identifier assigned to this node instance.
+     * @return A UUID struct representing the node identity.
+     */
+    boost::uuids::uuid state::get_node_id() const {
+        // Return the internally stored UUID value structure cleanly natively.
+        return node_id_;
+    }
+
+    /**
      * @brief Retrieves a mutable reference to the active sessions container.
      * @return A reference to the sessions map.
      */
     sessions_container_t & state::get_sessions() {
         // Return a mutable reference to the underlying sessions unordered_map.
         return sessions_;
+    }
+
+    /**
+     * @brief Retrieves a mutable reference to the active sessions container mutex.
+     * @return A reference to the sessions mutex.
+     */
+    std::shared_mutex & state::get_sessions_mutex() {
+        // Return a mutable reference to the underlying sessions mutex object natively completely safely.
+        return sessions_mutex_;
     }
 
     /**

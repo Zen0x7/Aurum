@@ -77,20 +77,26 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     // Correct memory formatting for native little endian processing unit architectures
     boost::endian::little_to_native_inplace(_response_length);
 
-    // Ensure the ping response size matches the exact expected layout (16-byte UUID + 1-byte exit code).
-    ASSERT_EQ(_response_length, 17);
+    // Ensure the ping response size matches the exact expected layout (1-byte opcode + 1-byte type + 16-byte UUID + 1-byte exit code).
+    ASSERT_EQ(_response_length, 19);
+
+    // Ensure the ping response opcode matches the exact expected layout.
+    ASSERT_EQ(_response[8], aurum::op_code::ping);
+
+    // Ensure the ping response type matches the exact expected layout.
+    ASSERT_EQ(_response[9], aurum::message_type::response);
 
     // Create destination parsing uuid object structure representing transaction bound matching
     boost::uuids::uuid _response_transaction_id;
 
     // Extract the 16-byte transaction UUID from the incoming server payload.
-    std::memcpy(_response_transaction_id.data, _response.data() + 8, 16);
+    std::memcpy(_response_transaction_id.data, _response.data() + 10, 16);
 
     // Cross-validate that returned ID exactly equals source request tracking token element
     ASSERT_EQ(_transaction_id, _response_transaction_id);
 
     // Validate the response status confirms the ping operation succeeded successfully.
-    ASSERT_EQ(_response[24], aurum::exit_code::success);
+    ASSERT_EQ(_response[26], aurum::exit_code::success);
 
     // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
     _client->disconnect();
@@ -166,8 +172,8 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
         // Correct memory formatting for native little endian processing unit architectures
         boost::endian::little_to_native_inplace(_response_length);
 
-        // Ping length explicitly matches 16 bytes for UUID and 1 byte for exit mapping.
-        ASSERT_EQ(_response_length, 17);
+        // Ping length explicitly matches 1-byte opcode + 1-byte type + 16 bytes for UUID and 1 byte for exit mapping.
+        ASSERT_EQ(_response_length, 19);
 
         _response_lengths.push_back(_response_length);
         _offset += sizeof(_response_length);
@@ -175,6 +181,18 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
 
     // Process inner response logic tracking payloads securely matching source arrays.
     for (size_t _i = 0; _i < 3; ++_i) {
+        // Confirm ping target explicitly returned successful remote operation completion opcode.
+        ASSERT_EQ(_response[_offset], aurum::op_code::ping);
+
+        // Advance byte cursor mapping dynamic loop iterations correctly reliably mapping token dynamically explicitly reliably.
+        _offset += 1;
+
+        // Confirm ping target explicitly returned correct message type mapped dynamically correctly accurately safely.
+        ASSERT_EQ(_response[_offset], aurum::message_type::response);
+
+        // Advance byte cursor safely mapped smoothly structurally completely physically explicitly cleanly appropriately seamlessly correctly.
+        _offset += 1;
+
         // Create destination parsing uuid object structure representing transaction bound matching
         boost::uuids::uuid _response_transaction_id;
 
