@@ -74,7 +74,7 @@ namespace aurum::protocol {
         /**
          * @brief Resets the builder state clearing all internal payloads safely.
          */
-        void reset();
+        void flush();
     };
 
     /**

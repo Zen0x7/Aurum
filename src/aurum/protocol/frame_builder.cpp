@@ -177,7 +177,7 @@ namespace aurum::protocol {
     /**
      * @brief Resets the builder state clearing all internal payloads safely.
      */
-    void base_builder::reset() {
+    void base_builder::flush() {
         // Require exclusive lock preventing state reads while clearing buffers map securely.
         std::unique_lock _lock(shared_buffers_mutex_);
         // Truncate dynamically allocated inner buffers vector avoiding memory dangling limits cleanly.
