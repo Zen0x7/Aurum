@@ -142,18 +142,23 @@ TEST_F(node_fixture, ConnectDiscoverNodesAndConnectToThem) {
     // Because node A autonomously requested discovery within its initial frame layout,
     // the target node B automatically replied with a discovery response containing C's address.
     // Node A then automatically processes this response directly traversing its discovery handler natively.
-    // Once A processes C's existence, it establishes a new link securely.
-    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 1; }, std::chrono::seconds(5));
+    // Once A processes C's existence, it establishes a new link securely towards node C.
+    // Therefore, node C should now have 2 active sessions (one to B, one from A).
+    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
 
     // Validate that node C correctly registered the connection actively sent autonomously by node A.
-    ASSERT_EQ(node_c_->get_state()->get_sessions().size(), 1);
+    ASSERT_EQ(node_c_->get_state()->get_sessions().size(), 2);
 
     // Validate node A locally recorded both connections (one to B, one to C).
     wait_until([this] { return node_a_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
     ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 2);
 
+    // Verify node B still correctly holds exactly 2 sessions (one to A, one to C).
+    ASSERT_EQ(node_b_->get_state()->get_sessions().size(), 2);
+
     // Cleanup resources to ensure thread sanitization handles closures predictably properly.
     node_a_->disconnect_all();
+    node_b_->disconnect_all();
     node_c_->disconnect_all();
 
     // Verify closures effectively eliminated all remaining contexts.
