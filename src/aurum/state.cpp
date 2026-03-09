@@ -35,6 +35,9 @@ namespace aurum {
 
         // Bind opcode identify mapping dynamic discovery logic safely.
         handlers_[identify] = handlers::get_identify_handler();
+
+        // Bind opcode discovery mapping logic efficiently securely natively.
+        handlers_[discovery] = handlers::get_discovery_handler();
     }
 
     /**

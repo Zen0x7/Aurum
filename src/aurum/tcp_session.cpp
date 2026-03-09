@@ -39,6 +39,8 @@ namespace aurum {
                              std::shared_ptr<state> state) : id_(boost::uuids::random_generator()()),
                                                              state_(std::move(state)),
                                                              node_id_(boost::uuids::nil_uuid()),
+                                                             port_(0),
+                                                             host_(""),
                                                              kernel_(std::make_shared<tcp_kernel>(state_)),
                                                              socket_(std::move(socket)),
                                                              strand_(make_strand(socket_.get_executor())) {
@@ -170,6 +172,42 @@ namespace aurum {
     void tcp_session::set_node_id(boost::uuids::uuid node_id) {
         // Securely copy provided active reference struct into object internal boundaries exactly.
         node_id_ = node_id;
+    }
+
+    /**
+     * @brief Gets the node port bound to this specific network link.
+     * @return A valid 16-bit integer representing the active peer node port accurately.
+     */
+    std::uint16_t tcp_session::get_port() const {
+        // Evaluate natively stored internal object securely referencing mapping port completely.
+        return port_;
+    }
+
+    /**
+     * @brief Binds a remote node port to this currently active network session securely.
+     * @param port The valid 16-bit integer representing the node port.
+     */
+    void tcp_session::set_port(std::uint16_t port) {
+        // Securely copy provided active reference struct into object internal boundaries exactly.
+        port_ = port;
+    }
+
+    /**
+     * @brief Gets the node host bound to this specific network link.
+     * @return A valid string representing the active peer node host accurately.
+     */
+    std::string tcp_session::get_host() const {
+        // Evaluate natively stored internal object securely referencing mapping host completely.
+        return host_;
+    }
+
+    /**
+     * @brief Binds a remote node host to this currently active network session securely.
+     * @param host The valid string representing the node host.
+     */
+    void tcp_session::set_host(const std::string& host) {
+        // Securely copy provided active reference struct into object internal boundaries exactly.
+        host_ = host;
     }
 
     /**

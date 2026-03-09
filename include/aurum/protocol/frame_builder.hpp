@@ -94,9 +94,18 @@ namespace aurum::protocol {
          * @brief Adds an identify request containing the local node identifier.
          * @param node_id The 16-byte identifier representing the active node context.
          * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @param port The optional target port mapping correctly accurately.
+         * @param host The optional target host string mapping cleanly correctly.
          * @return A reference to the active builder instance for method chaining.
          */
-        request_builder& add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id = boost::uuids::random_generator()());
+        request_builder& add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id = boost::uuids::random_generator()(), std::uint16_t port = 0, const std::string& host = "");
+
+        /**
+         * @brief Adds a discovery request.
+         * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        request_builder& add_discovery(boost::uuids::uuid id = boost::uuids::random_generator()());
     };
 
     /**
@@ -127,6 +136,14 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         response_builder& add_non_implemented(std::uint8_t op, boost::uuids::uuid id);
+
+        /**
+         * @brief Adds a discovery response containing the active tracked nodes.
+         * @param id The transaction ID to respond to mapping properly safely.
+         * @param nodes The target sequence matching pairs containing parsed hosts and matching correctly natively integers correctly.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        response_builder& add_discovery(boost::uuids::uuid id, const std::vector<std::pair<std::string, std::uint16_t>>& nodes);
     };
 
     /**

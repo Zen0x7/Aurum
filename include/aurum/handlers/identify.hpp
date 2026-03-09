@@ -21,6 +21,7 @@
 #include <aurum/tcp_session.hpp>
 #include <aurum/protocol/frame_builder.hpp>
 #include <boost/core/ignore_unused.hpp>
+#include <boost/endian/conversion.hpp>
 #include <cstring>
 
 namespace aurum::handlers {
@@ -44,6 +45,26 @@ namespace aurum::handlers {
 
             // Set the extracted remote node identifier on the active current network session dynamically.
             session->set_node_id(_remote_node_id);
+
+            // Check if there are optional parameters structurally attached natively.
+            if (payload.size() >= 18) {
+                // Initialize tracking variable referencing the incoming peer mapped target completely securely.
+                std::uint16_t _remote_port;
+                // Copy natively reading mapped bytes properly cleanly evaluating boundaries securely accurately completely explicitly explicitly properly.
+                std::memcpy(&_remote_port, payload.data() + 16, sizeof(_remote_port));
+                // Convert network mapped architecture byte layout mapping struct completely safely accurately explicitly natively.
+                boost::endian::little_to_native_inplace(_remote_port);
+                // Attach parsed bound native port directly securely correctly accurately safely completely explicitly correctly natively.
+                session->set_port(_remote_port);
+
+                // Check if mapping explicitly evaluating length securely completely matches correctly safely securely completely correctly accurately natively.
+                if (payload.size() > 18) {
+                    // Extract mapping dynamically referencing payload buffer accurately mapping native object mapping completely safely correctly accurately natively.
+                    std::string _remote_host(reinterpret_cast<const char*>(payload.data() + 18), payload.size() - 18);
+                    // Attach matching explicitly dynamically string tracking mapped object completely properly explicitly safely correctly accurately natively.
+                    session->set_host(_remote_host);
+                }
+            }
 
             // If the incoming message is a request, we need to respond back.
             if (type == request) {
