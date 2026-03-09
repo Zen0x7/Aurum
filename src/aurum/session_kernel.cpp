@@ -14,23 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#include <aurum/tcp_kernel.hpp>
+#include <aurum/session_kernel.hpp>
 
 #include <aurum/state.hpp>
-#include <aurum/tcp_session.hpp>
+#include <aurum/session.hpp>
 #include <iostream>
 #include <boost/crc.hpp>
 #include <boost/endian/conversion.hpp>
 #include <cstring>
 
 namespace aurum {
-    tcp_kernel::tcp_kernel(std::shared_ptr<state> state) : state_(std::move(state)) {
+    session_kernel::session_kernel(std::shared_ptr<state> state) : state_(std::move(state)) {
 
     }
 
-    std::shared_ptr<const std::vector<std::uint8_t>> tcp_kernel::handle(
+    std::shared_ptr<const std::vector<std::uint8_t>> session_kernel::handle(
             const std::shared_ptr<std::vector<std::uint8_t>> &frame,
-            std::shared_ptr<tcp_session> session) {
+            std::shared_ptr<session> session) {
 
         // Verify frame boundaries are at least minimally valid
         if (!frame || frame->size() < 2) {

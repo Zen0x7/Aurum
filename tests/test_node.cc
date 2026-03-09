@@ -52,7 +52,7 @@ TEST_F(node_fixture, ConnectIdentifyAndDiscovery) {
     bool _properties_set = false;
     wait_until([this, &_properties_set] {
         std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
-        for(const auto& [_, _session] : node_b_->get_state()->get_sessions()) {
+        for(const auto& _session : node_b_->get_state()->get_sessions()) {
             if (_session->get_node_id() == node_a_->get_state()->get_node_id() && _session->get_port() > 0 && !_session->get_host().empty()) {
                 _properties_set = true;
                 return true;
@@ -123,7 +123,7 @@ TEST_F(node_fixture, ConnectDiscoverNodesAndConnectToThem) {
     bool _c_properties_set = false;
     wait_until([this, &_c_properties_set] {
         std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
-        for (const auto& [_, _session] : node_b_->get_state()->get_sessions()) {
+        for (const auto& _session : node_b_->get_state()->get_sessions()) {
             if (_session->get_node_id() == node_c_->get_state()->get_node_id() && _session->get_port() > 0 && !_session->get_host().empty()) {
                 _c_properties_set = true;
                 return true;

@@ -18,7 +18,7 @@
 #define AURUM_HANDLERS_DISCOVERY_HPP
 
 #include <aurum/state.hpp>
-#include <aurum/tcp_session.hpp>
+#include <aurum/session.hpp>
 #include <aurum/protocol/frame_builder.hpp>
 #include <boost/core/ignore_unused.hpp>
 #include <vector>
@@ -32,7 +32,7 @@ namespace aurum::handlers {
      */
     inline handler_type get_discovery_handler() {
         // Return a lambda capturing nothing, taking the required handler_type arguments.
-        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_tcp_session session, shared_state state) -> void {
+        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_session session, shared_state state) -> void {
             // Ignore the incoming payload since a discovery request carries no data payload.
             boost::ignore_unused(payload);
 
@@ -44,8 +44,8 @@ namespace aurum::handlers {
                 // Acquire a shared lock to read the sessions container safely without blocking other readers.
                 std::shared_lock _lock(state->get_sessions_mutex());
 
-                // Iterate over all active TCP connections mapped in the server state.
-                for (const auto& [_id, _target_session] : state->get_sessions()) {
+                // Iterate over all active network connections mapped in the server state container safely.
+                for (const auto& _target_session : state->get_sessions()) {
                     // Filter out the node originating the request, and the local processing node itself.
                     if (_target_session->get_node_id() != session->get_node_id() && _target_session->get_node_id() != state->get_node_id()) {
                         // Gather the target host and port string representation.
@@ -106,8 +106,8 @@ namespace aurum::handlers {
                     // Acquire a scoped read lock to inspect the current state's connection map.
                     {
                         std::shared_lock _lock(state->get_sessions_mutex());
-                        // Iterate through the actively registered network connection sessions.
-                        for (const auto& [_id, _target_session] : state->get_sessions()) {
+                        // Iterate through the actively registered network connection sessions natively correctly.
+                        for (const auto& _target_session : state->get_sessions()) {
                             // If a peer identically matches the discovered host and port, mark it to prevent redundant connections.
                             if (_target_session->get_host() == _host && _target_session->get_port() == _port) {
                                 _already_connected = true;

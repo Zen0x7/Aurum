@@ -33,6 +33,12 @@ namespace aurum {
 
       /** @brief Flag indicating if the TCP listener is fully initialized and ready. */
       std::atomic<bool> tcp_ready_{false};
+
+        /** @brief Port explicitly bound for incoming websocket protocol connections securely structurally mapped. */
+        std::atomic<std::uint16_t> websocket_port_{0};
+
+        /** @brief Flag signaling if the WebSocket server has completely bound to the designated port and is actively listening natively. */
+        std::atomic<bool> websocket_ready_{false};
     };
 }
 

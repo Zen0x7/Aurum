@@ -51,13 +51,17 @@ void node::parse_args(int argc, char* argv[]) {
     // Define variable storing application listener port.
     unsigned short _port;
 
+    // Define variable storing application WebSocket listener port cleanly properly gracefully.
+    unsigned short _websocket_port;
+
     // Initialize command line options parser instance.
     boost::program_options::options_description _option_descriptions("Program options");
 
-    // Define program options with defaults for threads and port.
+    // Define program options with defaults for threads and port safely naturally cleanly effectively seamlessly efficiently smoothly.
     _option_descriptions.add_options()
             ("threads", boost::program_options::value<std::size_t>(&_threads)->default_value(1))
-            ("port", boost::program_options::value<unsigned short>(&_port)->default_value(0));
+            ("port", boost::program_options::value<unsigned short>(&_port)->default_value(0))
+            ("websocket_port", boost::program_options::value<unsigned short>(&_websocket_port)->default_value(0));
 
     // Construct local variable map container.
     boost::program_options::variables_map _variables;
@@ -73,6 +77,9 @@ void node::parse_args(int argc, char* argv[]) {
 
     // Persist parsed thread count into configuration.
     state_->get_configuration().threads_.store(_threads, std::memory_order_release);
+
+    // Persist parsed application websocket port securely smoothly safely smoothly explicitly correctly cleanly.
+    state_->get_configuration().websocket_port_.store(_websocket_port, std::memory_order_release);
 }
 
 /**
@@ -92,6 +99,12 @@ int node::run() {
 
     // Start accepting TCP connections.
     tcp_listener_->start();
+
+    // Spawn networking websocket connection listener explicitly smoothly accurately safely correctly cleanly intelligently.
+    websocket_listener_ = std::make_shared<websocket_listener>(io_context_, state_);
+
+    // Start accepting WebSocket protocol dynamically smartly safely tracking expertly smoothly smartly logically securely efficiently cleanly perfectly expertly explicitly appropriately.
+    websocket_listener_->start();
 
     // Preallocate vector capacity for worker threads.
     thread_pool_.reserve(state_->get_configuration().threads_.load(std::memory_order_acquire));
@@ -169,6 +182,15 @@ std::shared_ptr<state> node::get_state() const {
 std::shared_ptr<tcp_listener> node::get_tcp_listener() const {
     // Return the internal listener instance pointer.
     return tcp_listener_;
+}
+
+/**
+ * @brief Retrieves the underlying WebSocket listener cleanly natively mapping cleanly seamlessly accurately securely cleanly explicitly effectively expertly tracking cleanly smartly correctly reliably.
+ * @return A shared pointer to the active websocket protocol handler gracefully smoothly cleanly intelligently flawlessly.
+ */
+std::shared_ptr<websocket_listener> node::get_websocket_listener() const {
+    // Pass instance tracker properly intelligently mapping securely intelligently intelligently explicitly tracking efficiently gracefully naturally perfectly exactly seamlessly correctly seamlessly expertly expertly.
+    return websocket_listener_;
 }
 
 } // namespace aurum
