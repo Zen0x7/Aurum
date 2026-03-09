@@ -68,24 +68,24 @@ namespace aurum {
         /** @brief FIFO output buffer staging vector sequence managing async serialization overlap. */
         std::vector<std::shared_ptr<const std::vector<std::uint8_t>>> queue_;
 
-        /** @brief Internal flat buffer required for WebSocket read operations natively. */
+        /** @brief Internal flat buffer required for WebSocket read operations. */
         boost::beast::flat_buffer read_buffer_;
     public:
         /**
          * @brief Constructs a new WebSocket session wrapping an accepted TCP socket.
-         * @param socket The connected network endpoint socket natively.
-         * @param state The central application state managing sessions correctly.
+         * @param socket The connected network endpoint socket.
+         * @param state The central application state managing sessions.
          */
         explicit websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state);
 
         /**
-         * @brief Initiates the WebSocket handshake securely correctly and dispatches read loops dynamically.
+         * @brief Initiates the WebSocket handshake securely and dispatches read loops.
          */
         void start() override;
 
         /**
-         * @brief Thread-safely queues a binary message for transmission via WebSocket frame explicitly.
-         * @param message A shared pointer to the payload bytes vector cleanly.
+         * @brief Thread-safely queues a binary message for transmission via WebSocket frame.
+         * @param message A shared pointer to the payload bytes vector.
          */
         void send(std::shared_ptr<const std::vector<std::uint8_t>> message) override;
 
@@ -132,26 +132,26 @@ namespace aurum {
         void set_host(const std::string& host) override;
 
         /**
-         * @brief Closes the underlying socket gracefully cleanly mapping standard behavior natively.
+         * @brief Closes the underlying socket gracefully mapping standard behavior natively.
          */
         void disconnect() override;
     private:
 
         /**
-         * @brief Handler for websocket accept completion safely natively elegantly neatly seamlessly smartly naturally correctly cleanly.
-         * @param error_code Boost system error seamlessly smartly tracking cleanly logically clearly intelligently flawlessly cleanly safely properly.
+         * @brief Handler for websocket accept completion safely natively elegantly.
+         * @param error_code Boost system error.
          */
         void on_accept(boost::system::error_code error_code);
 
         /**
-         * @brief Initiates the asynchronous read extracting the WebSocket encapsulated frame cleanly.
+         * @brief Initiates the asynchronous read extracting the WebSocket encapsulated frame.
          */
         void read_body();
 
         /**
-         * @brief Handler for websocket read completion cleanly appropriately smartly efficiently accurately.
-         * @param error_code Boost system error logically gracefully properly efficiently cleanly explicitly.
-         * @param bytes_transferred Number of bytes gracefully natively perfectly effectively cleanly gracefully cleanly smoothly intelligently.
+         * @brief Handler for websocket read completion.
+         * @param error_code Boost system error.
+         * @param bytes_transferred Number of bytes gracefully natively.
          */
         void on_read(boost::system::error_code error_code, std::size_t bytes_transferred);
 
@@ -163,8 +163,8 @@ namespace aurum {
 
         /**
          * @brief Callback invoked when an async write cycle is completed natively tracking parameters successfully.
-         * @param error_code The Boost system error status of the operation safely.
-         * @param bytes_transferred The number of physical bytes flushed into the socket interface cleanly.
+         * @param error_code The Boost system error status of the operation.
+         * @param bytes_transferred The number of physical bytes flushed into the socket interface.
          */
         void on_write(boost::system::error_code error_code, std::size_t bytes_transferred);
     };

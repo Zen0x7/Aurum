@@ -31,32 +31,32 @@ namespace aurum {
      * @details Opens a server socket, accepts incoming connections, and spawns new websocket_session instances cleanly.
      */
     class websocket_listener {
-        /** @brief Shared pointer to the central application state mapping correctly cleanly smoothly natively securely explicitly nicely optimally intelligently flawlessly completely smoothly naturally tracking tracking perfectly intelligently seamlessly effectively flawlessly natively. */
+        /** @brief Shared pointer to the central application state. */
         std::shared_ptr<state> state_;
 
-        /** @brief The Boost Asio acceptor used to listen for incoming connections safely cleanly correctly elegantly natively securely elegantly clearly explicitly natively expertly effectively. */
+        /** @brief The Boost Asio acceptor used to listen for incoming connections. */
         boost::asio::ip::tcp::acceptor acceptor_;
     public:
         /**
-         * @brief Constructs a new WebSocket listener bounded to the specified IO context safely tracking gracefully natively cleanly cleanly properly dynamically.
-         * @param io_context The Boost Asio execution context tracking correctly correctly safely securely explicitly securely safely neatly neatly naturally intelligently expertly.
-         * @param state A shared pointer to the application state containing configuration details logically explicitly correctly cleverly smoothly.
+         * @brief Constructs a new WebSocket listener bounded to the specified IO context.
+         * @param io_context The Boost Asio execution context.
+         * @param state A shared pointer to the application state containing configuration details.
          */
         websocket_listener(boost::asio::io_context &io_context, std::shared_ptr<state> state);
 
         /**
-         * @brief Retrieves the application state reference held by the listener nicely gracefully neatly cleanly smoothly dynamically flawlessly explicitly clearly safely gracefully smoothly.
-         * @return A mutable reference to the shared state pointer clearly natively smartly dynamically efficiently properly intelligently cleanly accurately securely correctly optimally.
+         * @brief Retrieves the application state reference held by the listener.
+         * @return A mutable reference to the shared state pointer.
          */
         std::shared_ptr<state> & get_state();
 
         /**
-         * @brief Starts the asynchronous connection acceptance loop effectively smoothly neatly intelligently perfectly seamlessly flawlessly explicitly securely expertly effectively smartly cleanly correctly gracefully.
+         * @brief Starts the asynchronous connection acceptance loop.
          */
         void start();
     private:
         /**
-         * @brief Internal method performing the asynchronous accept operation securely smoothly smartly cleverly nicely efficiently cleanly intelligently elegantly correctly cleanly nicely expertly neatly smoothly seamlessly elegantly nicely expertly precisely cleanly natively appropriately.
+         * @brief Internal method performing the asynchronous accept operation.
          */
         void do_accept();
     };

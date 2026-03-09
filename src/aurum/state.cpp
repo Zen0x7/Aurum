@@ -206,10 +206,14 @@ namespace aurum {
         // Secure a scoped reader lock finding mapping target contexts efficiently without deadlocking writers.
         {
             std::unique_lock _lock(get_sessions_mutex());
-            for (const auto& _session : get_sessions()) {
-                if (_session->get_node_id() == remote_node_id) {
-                    _sessions_to_remove.push_back(_session->get_id());
-                }
+
+            // Use the multi-index container's native optimized lookup by node_id.
+            auto& _node_id_index = sessions_.get<by_node_id>();
+            auto _range = _node_id_index.equal_range(remote_node_id);
+
+            // Collect the matching session IDs.
+            for (auto _it = _range.first; _it != _range.second; ++_it) {
+                _sessions_to_remove.push_back((*_it)->get_id());
             }
         }
 
