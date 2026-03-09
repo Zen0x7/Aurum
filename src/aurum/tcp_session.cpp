@@ -211,6 +211,17 @@ namespace aurum {
     }
 
     /**
+     * @brief Closes the underlying socket gracefully cleanly.
+     */
+    void tcp_session::disconnect() {
+        // Execute socket termination efficiently preventing memory leakage effectively.
+        if (socket_.is_open()) {
+            boost::system::error_code _ec;
+            socket_.close(_ec);
+        }
+    }
+
+    /**
      * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.
      */
     void tcp_session::read_header() {

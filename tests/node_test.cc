@@ -111,30 +111,19 @@ TEST_F(node_fixture, ConnectIdentifyAndDiscovery) {
 }
 
 TEST_F(node_fixture, ConnectDiscoverNodesAndConnectToThem) {
-    const unsigned short _port_a = node_a_->get_state()->get_configuration().tcp_port_.load(std::memory_order_acquire);
     const unsigned short _port_b = node_b_->get_state()->get_configuration().tcp_port_.load(std::memory_order_acquire);
-    const unsigned short _port_c = node_c_->get_state()->get_configuration().tcp_port_.load(std::memory_order_acquire);
 
-    // Node C connects to Node B
-    const auto _client_c = std::make_shared<aurum::tcp_client>();
-    _client_c->connect("127.0.0.1", _port_b);
+    // Autonomously invoke node C's connection to node B.
+    ASSERT_TRUE(node_c_->connect("127.0.0.1", _port_b));
 
+    // Wait until node B registers node C's connection effectively.
     wait_until([this] { return node_b_->get_state()->get_sessions().size() == 1; });
 
-    boost::uuids::uuid _tx_id_identify_c = boost::uuids::random_generator()();
-    auto [_data_identify_c, _frames_count_identify_c] = _client_c->get_builder()
-        .add_identify(node_c_->get_state()->get_node_id(), _tx_id_identify_c, _port_c, "127.0.0.1")
-        .get_data();
-
-    _client_c->send(_data_identify_c);
-    const auto _response_identify_c = _client_c->read(_frames_count_identify_c);
-    ASSERT_GE(_response_identify_c.size(), 8);
-
-    // Wait until Node B has set Node C's properties
+    // Ensure node C's session correctly mapped the host and port dynamically via identify parsing.
     bool _c_properties_set = false;
     wait_until([this, &_c_properties_set] {
         std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
-        for(const auto& [_, _session] : node_b_->get_state()->get_sessions()) {
+        for (const auto& [_, _session] : node_b_->get_state()->get_sessions()) {
             if (_session->get_node_id() == node_c_->get_state()->get_node_id() && _session->get_port() > 0 && !_session->get_host().empty()) {
                 _c_properties_set = true;
                 return true;
@@ -144,81 +133,30 @@ TEST_F(node_fixture, ConnectDiscoverNodesAndConnectToThem) {
     });
     ASSERT_TRUE(_c_properties_set);
 
-    // Node A connects to Node B
-    const auto _client_a = std::make_shared<aurum::tcp_client>();
-    _client_a->connect("127.0.0.1", _port_b);
+    // Node A autonomously connects to node B requesting discovery implicitly.
+    ASSERT_TRUE(node_a_->connect("127.0.0.1", _port_b));
 
+    // Wait until node B correctly acknowledges the second active session.
     wait_until([this] { return node_b_->get_state()->get_sessions().size() == 2; });
 
-    boost::uuids::uuid _tx_id_identify_a = boost::uuids::random_generator()();
-    auto [_data_identify_a, _frames_count_identify_a] = _client_a->get_builder()
-        .add_identify(node_a_->get_state()->get_node_id(), _tx_id_identify_a, _port_a, "127.0.0.1")
-        .get_data();
+    // Because node A autonomously requested discovery within its initial frame layout,
+    // the target node B automatically replied with a discovery response containing C's address.
+    // Node A then automatically processes this response directly traversing its discovery handler natively.
+    // Once A processes C's existence, it establishes a new link securely.
+    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 1; }, std::chrono::seconds(5));
 
-    _client_a->send(_data_identify_a);
-    const auto _response_identify_a = _client_a->read(_frames_count_identify_a);
-    ASSERT_GE(_response_identify_a.size(), 8);
-
-    _client_a->get_builder().flush();
-
-    // Node A sends discovery to Node B
-    boost::uuids::uuid _tx_id_discovery_a = boost::uuids::random_generator()();
-    auto [_data_discovery_a, _frames_count_discovery_a] = _client_a->get_builder()
-        .add_discovery(_tx_id_discovery_a)
-        .get_data();
-
-    _client_a->send(_data_discovery_a);
-    const auto _response_discovery_a = _client_a->read(_frames_count_discovery_a);
-    ASSERT_GE(_response_discovery_a.size(), 8);
-
-    std::uint16_t _response_quantity;
-    std::memcpy(&_response_quantity, _response_discovery_a.data() + 4, sizeof(_response_quantity));
-    boost::endian::little_to_native_inplace(_response_quantity);
-    ASSERT_EQ(_response_quantity, 1);
-
-    std::uint16_t _response_length;
-    std::memcpy(&_response_length, _response_discovery_a.data() + 6, sizeof(_response_length));
-    boost::endian::little_to_native_inplace(_response_length);
-
-    ASSERT_EQ(_response_discovery_a[8], aurum::op_code::discovery);
-    ASSERT_EQ(_response_discovery_a[9], aurum::message_type::response);
-
-    boost::uuids::uuid _response_transaction_id;
-    std::memcpy(_response_transaction_id.data, _response_discovery_a.data() + 10, 16);
-    ASSERT_EQ(_tx_id_discovery_a, _response_transaction_id);
-
-    std::uint32_t _nodes_size;
-    std::memcpy(&_nodes_size, _response_discovery_a.data() + 26, sizeof(_nodes_size));
-    boost::endian::little_to_native_inplace(_nodes_size);
-
-    // Since node C is connected to node B, the size should be 1
-    ASSERT_EQ(_nodes_size, 1);
-
-    // Read the returned node C
-    std::uint16_t _returned_port;
-    std::memcpy(&_returned_port, _response_discovery_a.data() + 30, sizeof(_returned_port));
-    boost::endian::little_to_native_inplace(_returned_port);
-    ASSERT_EQ(_returned_port, _port_c);
-
-    std::uint16_t _returned_host_size;
-    std::memcpy(&_returned_host_size, _response_discovery_a.data() + 32, sizeof(_returned_host_size));
-    boost::endian::little_to_native_inplace(_returned_host_size);
-
-    std::string _returned_host(reinterpret_cast<const char*>(_response_discovery_a.data() + 34), _returned_host_size);
-    ASSERT_EQ(_returned_host, "127.0.0.1");
-
-    // Node A now connects to Node C using the discovered properties
-    const auto _client_a_to_c = std::make_shared<aurum::tcp_client>();
-    _client_a_to_c->connect(_returned_host, _returned_port);
-
-    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 1; });
+    // Validate that node C correctly registered the connection actively sent autonomously by node A.
     ASSERT_EQ(node_c_->get_state()->get_sessions().size(), 1);
 
-    // Clean up
-    _client_a_to_c->disconnect();
-    _client_a->disconnect();
-    _client_c->disconnect();
+    // Validate node A locally recorded both connections (one to B, one to C).
+    wait_until([this] { return node_a_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
+    ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 2);
 
+    // Cleanup resources to ensure thread sanitization handles closures predictably properly.
+    node_a_->disconnect_all();
+    node_c_->disconnect_all();
+
+    // Verify closures effectively eliminated all remaining contexts.
     wait_until([this] { return node_b_->get_state()->get_sessions().size() == 0; });
     wait_until([this] { return node_c_->get_state()->get_sessions().size() == 0; });
 }

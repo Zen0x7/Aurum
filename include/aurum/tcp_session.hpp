@@ -115,6 +115,11 @@ namespace aurum {
          * @param host The valid string representing the node host.
          */
         void set_host(const std::string& host);
+
+        /**
+         * @brief Closes the underlying socket gracefully cleanly.
+         */
+        void disconnect();
     private:
         /**
          * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.
