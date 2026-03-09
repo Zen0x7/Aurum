@@ -31,6 +31,10 @@
 #include <array>
 #include <aurum/protocol/message_type.hpp>
 
+namespace boost::asio {
+    class io_context;
+}
+
 namespace aurum {
     /**
      * Forward tcp_session
@@ -87,11 +91,15 @@ namespace aurum {
         /** @brief Array of operation handlers indexed by 8-bit opcode. */
         std::array<handler_type, 256> handlers_;
 
+        /** @brief Reference to the main I/O execution context. */
+        boost::asio::io_context& io_context_;
+
     public:
         /**
          * @brief Constructs a new state object and initializes default handlers.
+         * @param io_context The application I/O execution context reference.
          */
-        state();
+        explicit state(boost::asio::io_context& io_context);
 
         /**
          * @brief Retrieves the immutable array of operation handlers.
@@ -136,6 +144,26 @@ namespace aurum {
          * @return true if a session was found and removed, false otherwise.
          */
         bool remove_session(boost::uuids::uuid id);
+
+        /**
+         * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
+         * @param host The remote peer IP address structurally mapped string.
+         * @param port The target destination listener port integer properly.
+         * @param with_discovery Boolean indicating if the initial connection payload should append a discovery request.
+         * @return True if connection was completely established natively securely.
+         */
+        bool connect(const std::string& host, unsigned short port, bool with_discovery = false);
+
+        /**
+         * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.
+         * @param remote_node_id The 16-byte identifier representing the active node context safely.
+         */
+        void disconnect(boost::uuids::uuid remote_node_id);
+
+        /**
+         * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
+         */
+        void disconnect_all();
     };
 }
 

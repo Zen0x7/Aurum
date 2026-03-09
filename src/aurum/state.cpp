@@ -22,11 +22,15 @@
 
 #include <cstring>
 
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/connect.hpp>
+
 namespace aurum {
     /**
      * @brief Constructs a new state object and initializes default handlers.
+     * @param io_context The application I/O execution context reference.
      */
-    state::state() : node_id_(boost::uuids::random_generator()()) {
+    state::state(boost::asio::io_context& io_context) : node_id_(boost::uuids::random_generator()()), io_context_(io_context) {
         // Fill the entire handlers array with the default non-implemented fallback.
         handlers_.fill(handlers::get_non_implemented_handler());
 
@@ -35,6 +39,9 @@ namespace aurum {
 
         // Bind opcode identify mapping dynamic discovery logic safely.
         handlers_[identify] = handlers::get_identify_handler();
+
+        // Bind opcode discovery mapping logic efficiently securely natively.
+        handlers_[discovery] = handlers::get_discovery_handler();
     }
 
     /**
@@ -104,7 +111,130 @@ namespace aurum {
     bool state::remove_session(const boost::uuids::uuid id) {
         // Acquire an exclusive lock to safely modify the sessions container.
         std::unique_lock _lock(sessions_mutex_);
-        // Erase the session matching the given ID and check if one was actually removed.
-        return sessions_.erase(id) == 1;
+        // Find the active mapping inside the sessions container.
+        auto _it = sessions_.find(id);
+        // Check if the given session actually exists.
+        if (_it != sessions_.end()) {
+            // Guarantee socket termination explicitly.
+            _it->second->disconnect();
+            // Erase the mapping completely from the state array.
+            sessions_.erase(_it);
+            // Indicate a successful deletion.
+            return true;
+        }
+
+        // Return false indicating the target identifier was not mapped in the current state.
+        return false;
+    }
+
+    /**
+     * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
+     * @param host The remote peer IP address structurally mapped string.
+     * @param port The target destination listener port integer properly.
+     * @param with_discovery Boolean indicating if the initial connection payload should append a discovery request.
+     * @return True if connection was completely established natively securely.
+     */
+    bool state::connect(const std::string& host, unsigned short port, bool with_discovery) {
+        // Initialize an empty socket instance bound to the application thread IO context.
+        boost::asio::ip::tcp::socket _socket(io_context_);
+        // Create an IP resolver to convert hostnames to valid network endpoints.
+        boost::asio::ip::tcp::resolver _resolver(io_context_);
+        // Declare a boost error code to catch resolution failures synchronously.
+        boost::system::error_code _resolve_ec;
+        // Block the calling thread resolving the host and port into accessible peer endpoints.
+        auto _endpoints = _resolver.resolve(host, std::to_string(port), _resolve_ec);
+
+        // Terminate the connection process if the address resolution was unsuccessful.
+        if (_resolve_ec) {
+            return false;
+        }
+
+        // Declare a boost error code to catch connection failures synchronously.
+        boost::system::error_code _connect_ec;
+        // Block the calling thread attempting to connect against the returned peer endpoints.
+        boost::asio::connect(_socket, _endpoints, _connect_ec);
+
+        // Terminate the connection process if the socket failed to establish a network link.
+        if (_connect_ec) {
+            return false;
+        }
+
+        // Wrap the connected socket dynamically into an active tracked network session.
+        auto _session = std::make_shared<tcp_session>(std::move(_socket), shared_from_this());
+
+        // Attempt to place the newly connected session into the central tracking structure.
+        if (!add_session(_session)) {
+            return false;
+        }
+
+        // Prepare a payload frame builder.
+        aurum::protocol::frame_builder _builder;
+        auto _request = _builder.as_request();
+
+        // Enqueue an identify payload including the local host string representation and port.
+        _request.add_identify(get_node_id(), boost::uuids::random_generator()(), get_configuration().tcp_port_.load(), "127.0.0.1");
+
+        // Verify if a discovery operation was explicitly requested for this new connection context.
+        if (with_discovery) {
+            // Append a discovery protocol frame request tightly bundled after the identify frame.
+            _request.add_discovery();
+        }
+
+        // Ask the builder to resolve the enqueued payloads generating a single contiguous output frame.
+        auto [_buffer, _count] = _request.get_data();
+
+        // Feed the serialized byte vector frame seamlessly towards the open TCP session.
+        _session->send(std::make_shared<std::vector<std::uint8_t>>(std::move(_buffer)));
+
+        // Initiate the asynchronous network data reading pipeline properly.
+        _session->start();
+
+        // Indicate a completely successfully mapped outbound connection cleanly.
+        return true;
+    }
+
+    /**
+     * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.
+     * @param remote_node_id The 16-byte identifier representing the active node context safely.
+     */
+    void state::disconnect(boost::uuids::uuid remote_node_id) {
+        // Collect targeted matching session identifiers explicitly tracking the items to erase.
+        std::vector<boost::uuids::uuid> _sessions_to_remove;
+
+        // Secure a scoped reader lock finding mapping target contexts efficiently without deadlocking writers.
+        {
+            std::unique_lock _lock(get_sessions_mutex());
+            for (const auto& [_id, _session] : get_sessions()) {
+                if (_session->get_node_id() == remote_node_id) {
+                    _sessions_to_remove.push_back(_id);
+                }
+            }
+        }
+
+        // Request the active state to explicitly detach the recorded mappings efficiently.
+        for (const auto& _id : _sessions_to_remove) {
+            remove_session(_id);
+        }
+    }
+
+    /**
+     * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
+     */
+    void state::disconnect_all() {
+        // Collect mapping contexts extracting tracking targets efficiently.
+        std::vector<boost::uuids::uuid> _sessions_to_remove;
+
+        // Extract session targets mapping safely smoothly.
+        {
+            std::unique_lock _lock(get_sessions_mutex());
+            for (const auto& [_id, _session] : get_sessions()) {
+                _sessions_to_remove.push_back(_id);
+            }
+        }
+
+        // Drop all registered connections completely gracefully.
+        for (const auto& _id : _sessions_to_remove) {
+            remove_session(_id);
+        }
     }
 }

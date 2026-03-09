@@ -47,6 +47,12 @@ namespace aurum {
         /** @brief Identifier of the remote node associated with this connection. */
         boost::uuids::uuid node_id_;
 
+        /** @brief Port of the remote node associated with this connection. */
+        std::uint16_t port_;
+
+        /** @brief Host of the remote node associated with this connection. */
+        std::string host_;
+
         /** @brief Protocol parser associated exclusively with this session. */
         std::shared_ptr<tcp_kernel> kernel_;
     public:
@@ -85,6 +91,35 @@ namespace aurum {
          * @param node_id The valid 16-byte node identification struct mapping.
          */
         void set_node_id(boost::uuids::uuid node_id);
+
+        /**
+         * @brief Gets the node port bound to this specific network link.
+         * @return A valid 16-bit integer representing the active peer node port accurately.
+         */
+        std::uint16_t get_port() const;
+
+        /**
+         * @brief Binds a remote node port to this currently active network session securely.
+         * @param port The valid 16-bit integer representing the node port.
+         */
+        void set_port(std::uint16_t port);
+
+        /**
+         * @brief Gets the node host bound to this specific network link.
+         * @return A valid string representing the active peer node host accurately.
+         */
+        std::string get_host() const;
+
+        /**
+         * @brief Binds a remote node host to this currently active network session securely.
+         * @param host The valid string representing the node host.
+         */
+        void set_host(const std::string& host);
+
+        /**
+         * @brief Closes the underlying socket gracefully cleanly.
+         */
+        void disconnect();
     private:
         /**
          * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.

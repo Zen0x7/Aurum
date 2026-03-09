@@ -21,6 +21,7 @@
 #include <aurum/tcp_session.hpp>
 #include <aurum/protocol/frame_builder.hpp>
 #include <boost/core/ignore_unused.hpp>
+#include <boost/endian/conversion.hpp>
 #include <cstring>
 
 namespace aurum::handlers {
@@ -44,6 +45,26 @@ namespace aurum::handlers {
 
             // Set the extracted remote node identifier on the active current network session dynamically.
             session->set_node_id(_remote_node_id);
+
+            // Check if the payload contains the optional 2-byte port.
+            if (payload.size() >= 18) {
+                // Variable to temporarily hold the encoded port size.
+                std::uint16_t _remote_port;
+                // Copy the 16-bit port block from the payload byte array.
+                std::memcpy(&_remote_port, payload.data() + 16, sizeof(_remote_port));
+                // Decode the port from little-endian to the host machine's native architecture.
+                boost::endian::little_to_native_inplace(_remote_port);
+                // Assign the extracted listening port directly to the session reference.
+                session->set_port(_remote_port);
+
+                // Verify if there are extra bytes in the payload representing the host string.
+                if (payload.size() > 18) {
+                    // Reinterpret the remaining buffer bytes into a standard string representing the host domain or IP.
+                    std::string _remote_host(reinterpret_cast<const char*>(payload.data() + 18), payload.size() - 18);
+                    // Attach the parsed text string directly to the session context.
+                    session->set_host(_remote_host);
+                }
+            }
 
             // If the incoming message is a request, we need to respond back.
             if (type == request) {

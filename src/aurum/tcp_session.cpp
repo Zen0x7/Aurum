@@ -39,6 +39,8 @@ namespace aurum {
                              std::shared_ptr<state> state) : id_(boost::uuids::random_generator()()),
                                                              state_(std::move(state)),
                                                              node_id_(boost::uuids::nil_uuid()),
+                                                             port_(0),
+                                                             host_(""),
                                                              kernel_(std::make_shared<tcp_kernel>(state_)),
                                                              socket_(std::move(socket)),
                                                              strand_(make_strand(socket_.get_executor())) {
@@ -159,7 +161,7 @@ namespace aurum {
      * @return A valid UUID struct referencing the active peer node accurately.
      */
     boost::uuids::uuid tcp_session::get_node_id() const {
-        // Evaluate natively stored internal object securely referencing mapping identity completely.
+        // Return the internally stored node ID structure.
         return node_id_;
     }
 
@@ -168,8 +170,55 @@ namespace aurum {
      * @param node_id The valid 16-byte node identification struct mapping.
      */
     void tcp_session::set_node_id(boost::uuids::uuid node_id) {
-        // Securely copy provided active reference struct into object internal boundaries exactly.
+        // Assign the remote node identity to this connection.
         node_id_ = node_id;
+    }
+
+    /**
+     * @brief Gets the node port bound to this specific network link.
+     * @return A valid 16-bit integer representing the active peer node port accurately.
+     */
+    std::uint16_t tcp_session::get_port() const {
+        // Return the locally cached remote port variable.
+        return port_;
+    }
+
+    /**
+     * @brief Binds a remote node port to this currently active network session securely.
+     * @param port The valid 16-bit integer representing the node port.
+     */
+    void tcp_session::set_port(std::uint16_t port) {
+        // Save the remote node port assigned to this specific link context.
+        port_ = port;
+    }
+
+    /**
+     * @brief Gets the node host bound to this specific network link.
+     * @return A valid string representing the active peer node host accurately.
+     */
+    std::string tcp_session::get_host() const {
+        // Return the cached host string mapped to the remote peer.
+        return host_;
+    }
+
+    /**
+     * @brief Binds a remote node host to this currently active network session securely.
+     * @param host The valid string representing the node host.
+     */
+    void tcp_session::set_host(const std::string& host) {
+        // Store the explicitly provided remote peer host string.
+        host_ = host;
+    }
+
+    /**
+     * @brief Closes the underlying socket gracefully cleanly.
+     */
+    void tcp_session::disconnect() {
+        // Execute socket termination efficiently preventing memory leakage effectively.
+        if (socket_.is_open()) {
+            boost::system::error_code _ec;
+            socket_.close(_ec);
+        }
     }
 
     /**

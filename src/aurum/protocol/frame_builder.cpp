@@ -219,31 +219,89 @@ namespace aurum::protocol {
      * @brief Adds an identify request containing the local node identifier.
      * @param node_id The 16-byte identifier representing the active node context.
      * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @param port The optional target port mapping correctly accurately.
+     * @param host The optional target host string mapping cleanly correctly.
      * @return A reference to the active builder instance for method chaining.
      */
-    request_builder& request_builder::add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id) {
+    request_builder& request_builder::add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id, std::uint16_t port, const std::string& host) {
         // Allocate a dedicated array matching identify payload memory footprint structures securely.
         std::vector<std::uint8_t> _buffer;
-        // Pre-allocate correctly evaluating bounding mapping length explicitly avoiding bottlenecks.
-        _buffer.reserve(34); // opcode (1) + type (1) + tx_id (16) + node_id (16) = 34
+        // Start counting the required payload capacity initialized to 34 bytes for the basic payload structure.
+        std::size_t _expected_size = 34;
 
-        // Add identify target opcode safely.
+        // Evaluate if either the port or host variables were supplied.
+        if (port != 0 || !host.empty()) {
+            // Include space to allocate a 16-bit numeric port constraint and the string length limit bounds accurately.
+            _expected_size += 2 + host.size();
+        }
+
+        // Reserve vector space pre-calculating boundary limit requirements to avoid automatic reallocation.
+        _buffer.reserve(_expected_size);
+
+        // Define the opcode context identifier as identify structurally mapped accurately.
         _buffer.push_back(identify);
-        // Map transmission origin logically to request format.
+        // Declare this message specifically as an outgoing request natively.
         _buffer.push_back(message_type::request);
-        // Append transaction matching identifier natively.
+        // Forward mapped UUID explicitly tracking transmission operations limits logically securely.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Append local node identifier target accurately.
+        // Track unique structural identifier matching local state context explicitly seamlessly correctly safely.
         _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
 
-        // Request exclusive access securely mapped tracking objects globally.
-        std::unique_lock _lock(shared_buffers_mutex_);
-        // Emplace configured identify bounds structurally mapping target objects safely.
-        buffers_.push_back(std::move(_buffer));
-        // Push evaluated footprint updating tracking logic correctly explicitly mapped.
-        total_payload_size_.fetch_add(34, std::memory_order_relaxed);
+        // Process optional arguments appending corresponding dynamic payload natively matching formats.
+        if (port != 0 || !host.empty()) {
+            // Structure listening port variable natively properly correctly completely matching logic appropriately natively.
+            std::uint16_t _port_le = port;
+        // Decode the integer to match little-endian network architecture.
+            boost::endian::native_to_little_inplace(_port_le);
+        // Interpret the little-endian integer variable as a byte pointer.
+            auto* _port_ptr = reinterpret_cast<const std::uint8_t*>(&_port_le);
+        // Append the 2 bytes of the port into the payload buffer.
+            _buffer.insert(_buffer.end(), _port_ptr, _port_ptr + sizeof(_port_le));
 
-        // Chain caller object properly cleanly mapping execution targets properly.
+        // Evaluate if the host string parameter has content.
+            if (!host.empty()) {
+            // Append the raw character bytes of the host string into the end of the buffer array.
+                _buffer.insert(_buffer.end(), host.begin(), host.end());
+            }
+        }
+
+    // Acquire an exclusive lock on the shared buffers to protect concurrent writes.
+        std::unique_lock _lock(shared_buffers_mutex_);
+    // Emplace the fully configured identify payload into the internal storage safely.
+        buffers_.push_back(std::move(_buffer));
+    // Increment the global payload size counter by the exact computed size.
+        total_payload_size_.fetch_add(_expected_size, std::memory_order_relaxed);
+
+    // Return the builder instance reference for method chaining.
+        return *this;
+    }
+
+    /**
+     * @brief Adds a discovery request.
+     * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    request_builder& request_builder::add_discovery(boost::uuids::uuid id) {
+    // Initialize an empty vector for holding the discovery request payload bytes.
+        std::vector<std::uint8_t> _buffer;
+    // Pre-allocate the memory needed for a standard 18-byte discovery request.
+        _buffer.reserve(18); // opcode (1) + type (1) + tx_id (16) = 18
+
+    // Append the discovery target opcode safely to the payload array.
+        _buffer.push_back(discovery);
+    // Add the explicitly bound message type indicating an outbound request.
+        _buffer.push_back(message_type::request);
+    // Emplace the transaction ID UUID elements into the array.
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+
+    // Secure an exclusive access lock on the thread-safe payload buffering container map.
+        std::unique_lock _lock(shared_buffers_mutex_);
+    // Store the prepared request buffer instance safely inside the global arrays.
+        buffers_.push_back(std::move(_buffer));
+    // Instruct the overall buffer counter explicitly updating its sequence.
+        total_payload_size_.fetch_add(18, std::memory_order_relaxed);
+
+    // Provide the method chaining context return binding safely.
         return *this;
     }
 
@@ -340,6 +398,81 @@ namespace aurum::protocol {
         total_payload_size_.fetch_add(19, std::memory_order_relaxed);
 
         // Return a reference to this builder instance to allow method chaining.
+        return *this;
+    }
+
+    /**
+     * @brief Adds a discovery response containing the active tracked nodes.
+     * @param id The transaction ID to respond to.
+     * @param nodes A vector of host and port pairs representing connected peers.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    response_builder& response_builder::add_discovery(boost::uuids::uuid id, const std::vector<std::pair<std::string, std::uint16_t>>& nodes) {
+        // Initialize an empty vector for holding the discovery response payload elements.
+        std::vector<std::uint8_t> _buffer;
+        // Declare the base payload size boundary mapping the header, message type, ID, and list length.
+        std::size_t _expected_size = 18 + 4; // opcode (1) + type (1) + tx_id (16) + nodes_size (4)
+
+        // Loop through all nodes to compute their required capacity.
+        for (const auto& _node : nodes) {
+            // Expand the payload size adding the 2-byte port, 2-byte host string length, and the dynamic string length.
+            _expected_size += 2 + 2 + _node.first.size(); // port (2) + host_size (2) + host_length
+        }
+
+        // Allocate vector capacity matching exactly the evaluated payload length to prevent reallocations.
+        _buffer.reserve(_expected_size);
+
+        // Add the explicitly bound discovery opcode.
+        _buffer.push_back(discovery);
+        // Define the current payload stream as a network response payload type.
+        _buffer.push_back(message_type::response);
+        // Insert the transaction identifier required for the response matching context.
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+
+        // Construct a 32-bit limit indicator tracking the sequence length of the connected elements array.
+        std::uint32_t _nodes_size_le = static_cast<std::uint32_t>(nodes.size());
+        // Convert the structural length value format from native architectural little-endian rules.
+        boost::endian::native_to_little_inplace(_nodes_size_le);
+        // Retrieve the raw memory map referencing the little-endian sequence boundaries constraint structure safely.
+        auto* _nodes_size_ptr = reinterpret_cast<const std::uint8_t*>(&_nodes_size_le);
+        // Add the integer limits boundaries mapping elements.
+        _buffer.insert(_buffer.end(), _nodes_size_ptr, _nodes_size_ptr + sizeof(_nodes_size_le));
+
+        // Iterate sequentially appending the metadata bindings constraints to represent individual tracked limits.
+        for (const auto& _node : nodes) {
+            // Extract the 16-bit matching numeric representation explicitly.
+            std::uint16_t _port_le = _node.second;
+            // Decode numeric architecture limit formats structurally logically logically.
+            boost::endian::native_to_little_inplace(_port_le);
+            // Access the integer memory byte pointer sequence structure directly.
+            auto* _port_ptr = reinterpret_cast<const std::uint8_t*>(&_port_le);
+            // Emplace the mapped numeric port limits values.
+            _buffer.insert(_buffer.end(), _port_ptr, _port_ptr + sizeof(_port_le));
+
+            // Convert string bounds mapping natively matching little-endian length.
+            std::uint16_t _host_size_le = static_cast<std::uint16_t>(_node.first.size());
+            // Format architectural limitations.
+            boost::endian::native_to_little_inplace(_host_size_le);
+            // Assign pointer to extract internal character arrays structures logic length limits.
+            auto* _host_size_ptr = reinterpret_cast<const std::uint8_t*>(&_host_size_le);
+            // Append length mapping to active memory constraints bounds explicitly correctly.
+            _buffer.insert(_buffer.end(), _host_size_ptr, _host_size_ptr + sizeof(_host_size_le));
+        }
+
+        // Iterate over the nodes again to sequentially append their host strings right after the metadata bounds list.
+        for (const auto& _node : nodes) {
+            // Copy all characters composing the specific host string exactly into the payload array.
+            _buffer.insert(_buffer.end(), _node.first.begin(), _node.first.end());
+        }
+
+        // Guarantee mutually exclusive write access to the central memory container to preserve sequence ordering.
+        std::unique_lock _lock(shared_buffers_mutex_);
+        // Provide the generated buffer chunk strictly into the output collection container.
+        buffers_.push_back(std::move(_buffer));
+        // Push atomic memory tracking properties safely.
+        total_payload_size_.fetch_add(_expected_size, std::memory_order_relaxed);
+
+        // Chain builder invocation securely.
         return *this;
     }
 

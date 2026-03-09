@@ -31,7 +31,9 @@ namespace aurum {
         /** @brief Operational code representing a network ping request. */
         ping = 1,
         /** @brief Operational code for identifying network peer instances dynamically. */
-        identify = 2
+        identify = 2,
+        /** @brief Operational code for discovering connected network nodes. */
+        discovery = 3
     };
 
 }
