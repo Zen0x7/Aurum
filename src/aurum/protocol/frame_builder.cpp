@@ -226,53 +226,53 @@ namespace aurum::protocol {
     request_builder& request_builder::add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id, std::uint16_t port, const std::string& host) {
         // Allocate a dedicated array matching identify payload memory footprint structures securely.
         std::vector<std::uint8_t> _buffer;
-        // Calculate dynamically tracked object limit mapping securely exactly explicitly correctly cleanly.
+        // Start counting the required payload capacity initialized to 34 bytes for the basic payload structure.
         std::size_t _expected_size = 34;
 
-        // Evaluate condition determining explicit optional bounds mapping correctly explicitly accurately cleanly.
+        // Evaluate if either the port or host variables were supplied.
         if (port != 0 || !host.empty()) {
-            // Expand size mapping integer accurately correctly explicitly completely.
+            // Include space to allocate a 16-bit numeric port constraint and the string length limit bounds accurately.
             _expected_size += 2 + host.size();
         }
 
-        // Pre-allocate correctly evaluating bounding mapping length explicitly avoiding bottlenecks.
+        // Reserve vector space pre-calculating boundary limit requirements to avoid automatic reallocation.
         _buffer.reserve(_expected_size);
 
-        // Add identify target opcode safely.
+        // Define the opcode context identifier as identify structurally mapped accurately.
         _buffer.push_back(identify);
-        // Map transmission origin logically to request format.
+        // Declare this message specifically as an outgoing request natively.
         _buffer.push_back(message_type::request);
-        // Append transaction matching identifier natively.
+        // Forward mapped UUID explicitly tracking transmission operations limits logically securely.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
-        // Append local node identifier target accurately.
+        // Track unique structural identifier matching local state context explicitly seamlessly correctly safely.
         _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
 
-        // Map natively explicitly dynamic parameter safely matching correctly accurately.
+        // Process optional arguments appending corresponding dynamic payload natively matching formats.
         if (port != 0 || !host.empty()) {
-            // Construct mapping variable targeting natively structural limit strictly correctly explicitly safely natively.
+            // Structure listening port variable natively properly correctly completely matching logic appropriately natively.
             std::uint16_t _port_le = port;
-            // Native bytes swap executing limit boundary safely natively cleanly accurately explicit.
+        // Decode the integer to match little-endian network architecture.
             boost::endian::native_to_little_inplace(_port_le);
-            // Reinterpret natively safely bounded representation completely smoothly explicitly structurally safely accurately natively.
+        // Interpret the little-endian integer variable as a byte pointer.
             auto* _port_ptr = reinterpret_cast<const std::uint8_t*>(&_port_le);
-            // Emplace safely accurately tracking structurally bytes natively perfectly accurately securely explicitly correctly natively.
+        // Append the 2 bytes of the port into the payload buffer.
             _buffer.insert(_buffer.end(), _port_ptr, _port_ptr + sizeof(_port_le));
 
-            // Append directly accurately mapping bytes cleanly safely explicitly completely smoothly correctly natively.
+        // Evaluate if the host string parameter has content.
             if (!host.empty()) {
-                // Map explicit iterator range accurately cleanly safely explicitly natively.
+            // Append the raw character bytes of the host string into the end of the buffer array.
                 _buffer.insert(_buffer.end(), host.begin(), host.end());
             }
         }
 
-        // Request exclusive access securely mapped tracking objects globally.
+    // Acquire an exclusive lock on the shared buffers to protect concurrent writes.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Emplace configured identify bounds structurally mapping target objects safely.
+    // Emplace the fully configured identify payload into the internal storage safely.
         buffers_.push_back(std::move(_buffer));
-        // Push evaluated footprint updating tracking logic correctly explicitly mapped.
+    // Increment the global payload size counter by the exact computed size.
         total_payload_size_.fetch_add(_expected_size, std::memory_order_relaxed);
 
-        // Chain caller object properly cleanly mapping execution targets properly.
+    // Return the builder instance reference for method chaining.
         return *this;
     }
 
@@ -282,26 +282,26 @@ namespace aurum::protocol {
      * @return A reference to the active builder instance for method chaining.
      */
     request_builder& request_builder::add_discovery(boost::uuids::uuid id) {
-        // Initialize destination bytes natively array smoothly.
+    // Initialize an empty vector for holding the discovery request payload bytes.
         std::vector<std::uint8_t> _buffer;
-        // Allocate matching structure memory explicitly accurately natively safely mapping explicitly.
+    // Pre-allocate the memory needed for a standard 18-byte discovery request.
         _buffer.reserve(18); // opcode (1) + type (1) + tx_id (16) = 18
 
-        // Evaluate safely map natively structural assignment limit.
+    // Append the discovery target opcode safely to the payload array.
         _buffer.push_back(discovery);
-        // Assign bounds explicitly cleanly mapped logically appropriately correctly safely smoothly mapped accurately correctly natively explicitly cleanly natively.
+    // Add the explicitly bound message type indicating an outbound request.
         _buffer.push_back(message_type::request);
-        // Insert explicitly matched natively accurately mapped cleanly smoothly exactly correctly completely smoothly securely safely.
+    // Emplace the transaction ID UUID elements into the array.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 
-        // Mutex explicit locking block preventing corruption mapping accurately correctly safely efficiently gracefully exactly smoothly correctly explicitly appropriately explicitly.
+    // Secure an exclusive access lock on the thread-safe payload buffering container map.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Forward mapped safely correctly smoothly evaluated object properly safely explicitly accurately explicitly cleanly natively explicitly appropriately safely perfectly correctly smoothly successfully effectively thoroughly completely directly comprehensively exclusively effectively.
+    // Store the prepared request buffer instance safely inside the global arrays.
         buffers_.push_back(std::move(_buffer));
-        // Add natively mapped explicitly mapped cleanly matched accurate explicitly smoothly completely cleanly exactly appropriately appropriately directly globally safely cleanly seamlessly explicit successfully directly structurally explicitly correct securely smoothly natively explicitly thoroughly safely comprehensively successfully explicit logically safely gracefully seamlessly accurate strictly optimally structurally seamlessly effectively fully correctly smoothly explicitly accurately robustly securely securely safely natively gracefully strictly properly reliably safely thoroughly flawlessly explicitly properly correctly seamlessly directly explicitly natively completely smoothly safely strictly reliably natively successfully reliably cleanly successfully securely successfully efficiently effectively seamlessly effectively safely thoroughly efficiently securely efficiently efficiently explicitly efficiently safely completely effectively thoroughly natively completely explicit seamlessly efficiently effectively seamlessly flawlessly correctly correctly reliably thoroughly seamlessly securely strictly reliably appropriately strictly natively effectively seamlessly successfully seamlessly flawlessly explicitly accurately.
+    // Instruct the overall buffer counter explicitly updating its sequence.
         total_payload_size_.fetch_add(18, std::memory_order_relaxed);
 
-        // Chain caller safely.
+    // Provide the method chaining context return binding safely.
         return *this;
     }
 
@@ -403,76 +403,76 @@ namespace aurum::protocol {
 
     /**
      * @brief Adds a discovery response containing the active tracked nodes.
-     * @param id The transaction ID to respond to mapping properly safely.
-     * @param nodes The target sequence matching pairs containing parsed hosts and matching correctly natively integers correctly.
+     * @param id The transaction ID to respond to.
+     * @param nodes A vector of host and port pairs representing connected peers.
      * @return A reference to the active builder instance for method chaining.
      */
     response_builder& response_builder::add_discovery(boost::uuids::uuid id, const std::vector<std::pair<std::string, std::uint16_t>>& nodes) {
-        // Initialize an empty vector matching structural natively bound elements smoothly cleanly efficiently correctly natively.
+        // Initialize an empty vector for holding the discovery response payload elements.
         std::vector<std::uint8_t> _buffer;
-        // Declare dynamically mapped payload limit boundary mapping completely cleanly smoothly cleanly dynamically efficiently natively accurately effectively safely correctly completely dynamically gracefully optimally natively smoothly mapping cleanly securely securely safely correctly accurately natively explicitly implicitly explicitly perfectly perfectly strictly safely cleanly.
+        // Declare the base payload size boundary mapping the header, message type, ID, and list length.
         std::size_t _expected_size = 18 + 4; // opcode (1) + type (1) + tx_id (16) + nodes_size (4)
 
-        // Loop bound targets effectively mapping completely cleanly accurately matching dynamically cleanly smoothly smoothly securely securely explicitly completely successfully effectively explicitly optimally directly explicitly smoothly.
+        // Loop through all nodes to compute their required capacity.
         for (const auto& _node : nodes) {
-            // Expand mapping tracking limit correctly dynamically cleanly accurately natively.
+            // Expand the payload size adding the 2-byte port, 2-byte host string length, and the dynamic string length.
             _expected_size += 2 + 2 + _node.first.size(); // port (2) + host_size (2) + host_length
         }
 
-        // Allocate memory natively mapping size completely safely avoiding reallocations properly clearly effectively properly safely natively.
+        // Allocate vector capacity matching exactly the evaluated payload length to prevent reallocations.
         _buffer.reserve(_expected_size);
 
-        // Bind target mapping completely reliably efficiently securely cleanly correctly safely explicitly explicitly mapping explicitly logically.
+        // Add the explicitly bound discovery opcode.
         _buffer.push_back(discovery);
-        // Bind cleanly explicit target response natively properly efficiently natively securely efficiently smoothly explicit explicitly cleanly properly explicitly efficiently implicitly successfully securely cleanly properly accurately seamlessly.
+        // Define the current payload stream as a network response payload type.
         _buffer.push_back(message_type::response);
-        // Push target matching ID natively smoothly safely efficiently mapping securely correctly cleanly accurately explicitly safely efficiently mapping properly structurally dynamically effectively seamlessly correctly implicitly perfectly perfectly seamlessly safely cleanly explicitly smoothly efficiently safely securely seamlessly effectively completely reliably natively perfectly efficiently explicit explicitly dynamically reliably.
+        // Insert the transaction identifier required for the response matching context.
         _buffer.insert(_buffer.end(), id.begin(), id.end());
 
-        // Construct uint32 variable sizing properly correctly structurally mapping efficiently seamlessly safely correctly completely.
+        // Construct a 32-bit limit indicator tracking the sequence length of the connected elements array.
         std::uint32_t _nodes_size_le = static_cast<std::uint32_t>(nodes.size());
-        // Map natively explicitly bytes structurally safely smoothly securely properly explicit correctly securely explicitly correctly smoothly thoroughly efficiently safely accurately completely smoothly explicit optimally dynamically cleanly completely cleanly cleanly logically seamlessly flawlessly flawlessly strictly cleanly seamlessly perfectly gracefully natively implicitly seamlessly optimally seamlessly cleanly thoroughly dynamically natively cleanly.
+        // Convert the structural length value format from native architectural little-endian rules.
         boost::endian::native_to_little_inplace(_nodes_size_le);
-        // Extract native structurally safely cleanly explicitly dynamically flawlessly cleanly dynamically completely thoroughly flawlessly explicitly mapping explicitly.
+        // Retrieve the raw memory map referencing the little-endian sequence boundaries constraint structure safely.
         auto* _nodes_size_ptr = reinterpret_cast<const std::uint8_t*>(&_nodes_size_le);
-        // Map elements efficiently completely smoothly exactly smoothly completely explicitly properly efficiently optimally natively smoothly natively smoothly explicitly cleanly cleanly accurately safely smoothly.
+        // Add the integer limits boundaries mapping elements.
         _buffer.insert(_buffer.end(), _nodes_size_ptr, _nodes_size_ptr + sizeof(_nodes_size_le));
 
-        // Iterate correctly extracting bounds mapping explicitly natively cleanly accurately successfully securely explicitly structurally.
+        // Iterate sequentially appending the metadata bindings constraints to represent individual tracked limits.
         for (const auto& _node : nodes) {
-            // Create statically structurally mapping optimally safely successfully securely natively explicitly optimally properly cleanly directly accurately correctly safely.
+            // Extract the 16-bit matching numeric representation explicitly.
             std::uint16_t _port_le = _node.second;
-            // Native conversion securely matching safely cleanly efficiently explicit explicitly efficiently natively properly.
+            // Decode numeric architecture limit formats structurally logically logically.
             boost::endian::native_to_little_inplace(_port_le);
-            // Construct mapping natively cleanly seamlessly smoothly efficiently safely efficiently seamlessly effectively directly flawlessly.
+            // Access the integer memory byte pointer sequence structure directly.
             auto* _port_ptr = reinterpret_cast<const std::uint8_t*>(&_port_le);
-            // Push securely mapping directly effectively safely effectively efficiently optimally flawlessly safely accurately directly explicitly correctly correctly safely reliably seamlessly correctly completely cleanly explicitly explicitly efficiently seamlessly accurately correctly properly perfectly.
+            // Emplace the mapped numeric port limits values.
             _buffer.insert(_buffer.end(), _port_ptr, _port_ptr + sizeof(_port_le));
 
-            // Map string length limit bound appropriately completely gracefully cleanly appropriately correctly structurally securely properly.
+            // Convert string bounds mapping natively matching little-endian length.
             std::uint16_t _host_size_le = static_cast<std::uint16_t>(_node.first.size());
-            // Align securely perfectly explicitly directly safely successfully completely smoothly explicit properly flawlessly effectively explicitly dynamically directly cleanly seamlessly logically dynamically smoothly strictly optimally efficiently thoroughly seamlessly effectively strictly seamlessly.
+            // Format architectural limitations.
             boost::endian::native_to_little_inplace(_host_size_le);
-            // Construct pointer correctly efficiently safely mapping securely flawlessly seamlessly completely properly successfully seamlessly appropriately smoothly cleanly dynamically.
+            // Assign pointer to extract internal character arrays structures logic length limits.
             auto* _host_size_ptr = reinterpret_cast<const std::uint8_t*>(&_host_size_le);
-            // Extract properly successfully safely seamlessly natively efficiently safely explicitly securely accurately efficiently.
+            // Append length mapping to active memory constraints bounds explicitly correctly.
             _buffer.insert(_buffer.end(), _host_size_ptr, _host_size_ptr + sizeof(_host_size_le));
         }
 
-        // Iterate again copying safely strings dynamically completely cleanly correctly efficiently successfully smoothly successfully natively explicitly smoothly dynamically securely explicitly properly structurally safely flawlessly explicitly natively safely successfully optimally successfully securely efficiently natively natively smoothly seamlessly properly strictly dynamically reliably strictly smoothly completely.
+        // Iterate over the nodes again to sequentially append their host strings right after the metadata bounds list.
         for (const auto& _node : nodes) {
-            // Push accurately characters seamlessly safely efficiently cleanly directly structurally efficiently flawlessly cleanly safely reliably completely correctly effectively explicitly.
+            // Copy all characters composing the specific host string exactly into the payload array.
             _buffer.insert(_buffer.end(), _node.first.begin(), _node.first.end());
         }
 
-        // Prevent memory explicit overlaps directly cleanly correctly reliably seamlessly strictly mapping flawlessly cleanly securely cleanly properly.
+        // Guarantee mutually exclusive write access to the central memory container to preserve sequence ordering.
         std::unique_lock _lock(shared_buffers_mutex_);
-        // Add natively efficiently matched array cleanly completely smoothly accurately explicitly safely correctly explicit thoroughly successfully safely properly safely gracefully.
+        // Provide the generated buffer chunk strictly into the output collection container.
         buffers_.push_back(std::move(_buffer));
-        // Extend length natively smoothly explicitly successfully explicit exactly optimally safely correctly efficiently explicitly thoroughly correctly correctly seamlessly securely explicitly effectively perfectly safely securely safely natively seamlessly reliably strictly completely securely appropriately securely cleanly reliably strictly gracefully.
+        // Push atomic memory tracking properties safely.
         total_payload_size_.fetch_add(_expected_size, std::memory_order_relaxed);
 
-        // Chain safely completely properly successfully optimally correctly reliably explicit gracefully efficiently explicitly successfully smoothly successfully.
+        // Chain builder invocation securely.
         return *this;
     }
 

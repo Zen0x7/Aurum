@@ -46,22 +46,22 @@ namespace aurum::handlers {
             // Set the extracted remote node identifier on the active current network session dynamically.
             session->set_node_id(_remote_node_id);
 
-            // Check if there are optional parameters structurally attached natively.
+            // Check if the payload contains the optional 2-byte port.
             if (payload.size() >= 18) {
-                // Initialize tracking variable referencing the incoming peer mapped target completely securely.
+                // Variable to temporarily hold the encoded port size.
                 std::uint16_t _remote_port;
-                // Copy natively reading mapped bytes properly cleanly evaluating boundaries securely accurately completely explicitly explicitly properly.
+                // Copy the 16-bit port block from the payload byte array.
                 std::memcpy(&_remote_port, payload.data() + 16, sizeof(_remote_port));
-                // Convert network mapped architecture byte layout mapping struct completely safely accurately explicitly natively.
+                // Decode the port from little-endian to the host machine's native architecture.
                 boost::endian::little_to_native_inplace(_remote_port);
-                // Attach parsed bound native port directly securely correctly accurately safely completely explicitly correctly natively.
+                // Assign the extracted listening port directly to the session reference.
                 session->set_port(_remote_port);
 
-                // Check if mapping explicitly evaluating length securely completely matches correctly safely securely completely correctly accurately natively.
+                // Verify if there are extra bytes in the payload representing the host string.
                 if (payload.size() > 18) {
-                    // Extract mapping dynamically referencing payload buffer accurately mapping native object mapping completely safely correctly accurately natively.
+                    // Reinterpret the remaining buffer bytes into a standard string representing the host domain or IP.
                     std::string _remote_host(reinterpret_cast<const char*>(payload.data() + 18), payload.size() - 18);
-                    // Attach matching explicitly dynamically string tracking mapped object completely properly explicitly safely correctly accurately natively.
+                    // Attach the parsed text string directly to the session context.
                     session->set_host(_remote_host);
                 }
             }
