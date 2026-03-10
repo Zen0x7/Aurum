@@ -163,17 +163,17 @@ namespace aurum::protocol {
         response_builder& add_discovery(boost::uuids::uuid id, const std::vector<std::pair<std::string, std::uint16_t>>& nodes);
 
         /**
-         * @brief Adds a join response containing the count of registered websocket sessions gracefully safely cleanly naturally.
-         * @param id The transaction ID to respond to mapping properly safely.
-         * @param count The number of current tracked sessions mapping safely smoothly cleanly.
+         * @brief Adds a join response containing the count of registered websocket sessions.
+         * @param id The transaction ID to respond to.
+         * @param count The number of current tracked sessions.
          * @return A reference to the active builder instance for method chaining.
          */
         response_builder& add_join(boost::uuids::uuid id, std::uint64_t count);
 
         /**
-         * @brief Adds a leave response containing the count of removed websocket sessions gracefully safely cleanly naturally.
-         * @param id The transaction ID to respond to mapping properly safely.
-         * @param count The number of removed tracked sessions mapping safely smoothly cleanly.
+         * @brief Adds a leave response containing the count of removed websocket sessions.
+         * @param id The transaction ID to respond to.
+         * @param count The number of removed tracked sessions.
          * @return A reference to the active builder instance for method chaining.
          */
         response_builder& add_leave(boost::uuids::uuid id, std::uint64_t count);

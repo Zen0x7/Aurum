@@ -127,7 +127,7 @@ namespace aurum {
 
         /**
          * @brief Retrieves a reference to the main I/O execution context safely.
-         * @return A reference to the boost::asio::io_context tracking background asynchronous limits safely smoothly cleanly efficiently.
+         * @return A reference to the boost::asio::io_context.
          */
         boost::asio::io_context& get_io_context();
 
@@ -167,14 +167,14 @@ namespace aurum {
 
         /**
          * @brief Broadcasts a raw payload to at least one active TCP session per unique connected remote node.
-         * @param message A shared pointer safely pointing strictly to the formatted serialized output cleanly safely.
+         * @param message A shared pointer to the serialized payload.
          */
         void broadcast_to_nodes(std::shared_ptr<const std::vector<std::uint8_t>> message);
 
         /**
-         * @brief Transmits a raw payload targetting an explicit TCP session mapped cleanly towards a specific remote node.
-         * @param node_id The valid 16-byte target destination mapped remotely logically strictly clearly mapping correctly.
-         * @param message A shared pointer strictly pointing safely naturally accurately effectively accurately.
+         * @brief Transmits a raw payload targetting an explicit TCP session mapped towards a specific remote node.
+         * @param node_id The valid 16-byte target node ID.
+         * @param message A shared pointer to the serialized payload.
          */
         void send_to_node(boost::uuids::uuid node_id, std::shared_ptr<const std::vector<std::uint8_t>> message);
     };

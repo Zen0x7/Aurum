@@ -95,6 +95,7 @@ namespace aurum {
     }
 
     void websocket_session::read_body() {
+        // Read the WebSocket encapsulated frame.
         ws_.async_read(read_buffer_, boost::beast::bind_front_handler(&websocket_session::on_read, shared_from_this()));
     }
 
@@ -103,13 +104,9 @@ namespace aurum {
 
         if (!error_code) {
             auto _self = shared_from_this();
-
             auto _payload = std::make_shared<std::vector<std::uint8_t>>();
-
             _payload->resize(read_buffer_.size());
-
             boost::asio::buffer_copy(boost::asio::buffer(*_payload), read_buffer_.data());
-
             read_buffer_.consume(read_buffer_.size());
 
             if (const auto _response = kernel_->handle(_payload, _self); _response) {
