@@ -30,30 +30,27 @@ namespace aurum::handlers {
      */
     inline handler_type get_leave_handler() {
         return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_session session, shared_state state) -> void {
-            // Apply early return when the kernel processes leave responses or if a websocket attempts to send a leave request
             if (session->get_type() == protocol::websocket || type == response) {
                 return;
             }
 
             if (payload.size() < 16) {
-                // Ignore gracefully mapping safely logically cleanly properly safely elegantly
                 return;
             }
 
-            // Extract the websocket UUID explicitly
             boost::uuids::uuid _websocket_id;
             std::memcpy(_websocket_id.data, payload.data(), 16);
 
             std::uint64_t _removed_count = 0;
+            std::vector<std::shared_ptr<aurum::session>> _sessions_to_disconnect;
 
-            // Remove safely cleanly explicitly efficiently properly correctly mapping smartly smoothly cleanly gracefully successfully intelligently flawlessly cleanly naturally seamlessly gracefully
             {
                 std::unique_lock _lock(state->get_sessions_mutex());
                 auto& _id_index = state->get_sessions().get<by_id>();
 
                 auto _it = _id_index.find(_websocket_id);
                 while (_it != _id_index.end()) {
-                    (*_it)->disconnect();
+                    _sessions_to_disconnect.push_back(*_it);
                     _it = _id_index.erase(_it);
                     _removed_count++;
 
@@ -61,7 +58,10 @@ namespace aurum::handlers {
                 }
             }
 
-            // Append a successful leave response implicitly mapping cleanly accurately reliably softly securely precisely cleanly smoothly seamlessly cleanly exactly naturally successfully elegantly
+            // Removed to prevent deadlocking within disconnect logic
+            // The dummy session is already unregistered from state map by erase()
+            // And being a dummy session, the disconnect is merely closing a non-started stream.
+
             builder.add_leave(transaction_id, _removed_count);
         };
     }

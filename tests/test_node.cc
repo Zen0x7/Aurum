@@ -20,6 +20,7 @@
 #include <aurum/protocol.hpp>
 #include <aurum/tcp_client.hpp>
 #include <aurum/tcp_session.hpp>
+#include <aurum/websocket_client.hpp>
 #include <iostream>
 
 TEST_F(node_fixture, connect_to_node_and_send_identify_and_discovery) {
@@ -158,4 +159,83 @@ TEST_F(node_fixture, connect_discover_nodes_and_connect_to_them) {
     // Verify closures effectively eliminated all remaining contexts.
     aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 0; });
     aurum::test_utils::wait_until([this] { return node_c_->get_state()->get_sessions().size() == 0; });
+}
+
+TEST_F(node_fixture, connect_websocket_and_verify_cluster_sync) {
+    const unsigned short _port_a = node_a_->get_state()->get_configuration().tcp_port_.load(std::memory_order_acquire);
+    const unsigned short _ws_port_b = node_b_->get_state()->get_configuration().websocket_port_.load(std::memory_order_acquire);
+
+    // node_b connects to node_a via TCP.
+    ASSERT_TRUE(node_b_->connect("127.0.0.1", _port_a));
+
+    // Wait until node_a registers the TCP connection.
+    aurum::test_utils::wait_until([this] { return node_a_->get_state()->get_sessions().size() == 1; });
+    ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 1);
+
+    // Wait until websocket server port is bound
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_configuration().websocket_port_.load(std::memory_order_acquire) > 0; });
+    const unsigned short _ws_port_b_active = node_b_->get_state()->get_configuration().websocket_port_.load(std::memory_order_acquire);
+
+    // Spin up a websocket client and connect it to node_b.
+    auto _ws_client = std::make_shared<aurum::websocket_client>();
+    bool _ws_connected = false;
+    aurum::test_utils::wait_until([&]() {
+        _ws_connected = _ws_client->connect("127.0.0.1", _ws_port_b_active);
+        return _ws_connected;
+    });
+    ASSERT_TRUE(_ws_connected);
+
+    // Wait until node_b registers the websocket connection natively.
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 2; }); // 1 TCP (to node A) + 1 WS
+
+    // Identify the websocket ID dynamically from node B's state.
+    boost::uuids::uuid _websocket_id;
+    {
+        std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
+        for (const auto& _session : node_b_->get_state()->get_sessions()) {
+            if (_session->get_type() == aurum::protocol::websocket) {
+                _websocket_id = _session->get_id();
+                break;
+            }
+        }
+    }
+
+    // Wait until node_a receives the join broadcast and creates the dummy websocket session matching the ID natively.
+    aurum::test_utils::wait_until([this, _websocket_id] {
+        std::shared_lock _lock(node_a_->get_state()->get_sessions_mutex());
+        for (const auto& _session : node_a_->get_state()->get_sessions()) {
+            if (_session->get_type() == aurum::protocol::websocket && _session->get_id() == _websocket_id) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    // Verify node_a has 2 sessions (1 TCP from node B + 1 dummy WS).
+    ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 2);
+
+    // Disconnect the websocket client.
+    _ws_client->disconnect();
+
+    // Wait until node_b drops the websocket session.
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 1; }, std::chrono::seconds(5));
+
+    // Wait until node_a receives the leave broadcast and removes the dummy websocket session.
+    bool _a_dropped = false;
+    aurum::test_utils::wait_until([this, &_a_dropped, _websocket_id] {
+        std::shared_lock _lock(node_a_->get_state()->get_sessions_mutex());
+        auto& _id_index = node_a_->get_state()->get_sessions().get<aurum::by_id>();
+        _a_dropped = _id_index.count(_websocket_id) == 0;
+        return _a_dropped;
+    }, std::chrono::seconds(5));
+    ASSERT_TRUE(_a_dropped);
+
+    // Verify node_a has 1 session again (only TCP).
+    ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 1);
+
+    // Cleanup resources gracefully.
+    node_a_->disconnect_all();
+    node_b_->disconnect_all();
+    node_c_->disconnect_all();
+    aurum::test_utils::wait_until([this] { return node_a_->get_state()->get_sessions().size() == 0; });
 }
