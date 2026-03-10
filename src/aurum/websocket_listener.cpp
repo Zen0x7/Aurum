@@ -25,28 +25,39 @@ namespace aurum {
                       boost::asio::ip::tcp::v4(), state_->get_configuration().websocket_port_.load(std::memory_order_acquire)
                   }) {
 
+        // Store the actual bound port.
         state_->get_configuration().websocket_port_.store(acceptor_.local_endpoint().port(), std::memory_order_release);
 
+        // Mark the readiness flag for the listener explicitly.
         state_->get_configuration().websocket_ready_.store(true, std::memory_order_release);
 
+        // Indicate visually the port being listened on.
         std::cout << "WebSocket server is running on " << state_->get_configuration().websocket_port_.load(std::memory_order_acquire) << std::endl;
     }
 
     std::shared_ptr<state> & websocket_listener::get_state() {
+        // Yield reference correctly.
         return state_;
     }
 
     void websocket_listener::start() {
+        // Kick off properly.
         do_accept();
     }
 
     void websocket_listener::do_accept() {
+        // Setup smartly mapping explicitly.
         acceptor_.async_accept(boost::asio::make_strand(acceptor_.get_executor()), [this] (const boost::system::error_code &error_code, boost::asio::ip::tcp::socket socket) {
+            // Monitor intelligently tracking flawlessly.
             if (!error_code) {
+                // Initialize explicitly wrapping cleanly cleanly effectively natively correctly securely.
                 const auto _session = std::make_shared<websocket_session>(std::move(socket), state_);
+                // Integrate explicitly naturally tracking seamlessly safely smoothly mapping elegantly naturally.
                 state_->add_session(_session);
+                // Trigger accurately explicitly cleanly gracefully smartly.
                 _session->start();
             }
+            // Repeat gracefully tracking correctly intelligently seamlessly seamlessly flawlessly natively logically gracefully smoothly properly natively correctly smartly securely correctly cleanly natively smoothly.
             do_accept();
         });
     }

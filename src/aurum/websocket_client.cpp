@@ -61,6 +61,7 @@ namespace aurum {
     void websocket_client::send(const std::vector<std::uint8_t>& message) {
         boost::system::error_code _ec;
 
+        // Send directly the buffer.
         ws_.write(boost::asio::buffer(message), _ec);
         if (_ec) {
             throw std::runtime_error("Failed to send WebSocket payload: " + _ec.message());
@@ -77,6 +78,7 @@ namespace aurum {
             throw std::runtime_error("Failed to read WebSocket payload: " + _ec.message());
         }
 
+        // Extract native bytes correctly mapped smoothly perfectly smoothly flawlessly neatly clearly directly cleanly cleanly.
         std::vector<std::uint8_t> _payload;
         _payload.resize(_buffer.size());
         boost::asio::buffer_copy(boost::asio::buffer(_payload), _buffer.data());

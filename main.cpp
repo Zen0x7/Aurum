@@ -24,11 +24,15 @@
  * @return Exit status code of the application.
  */
 int main(int argc, char *argv[]) {
+    // Import framework namespace.
     using namespace aurum;
 
+    // Instantiate a new node securely encapsulated via a unique pointer.
     auto _node = std::make_unique<node>();
 
+    // Pass the command line arguments resolving configuration values dynamically.
     _node->parse_args(argc, argv);
 
+    // Boot up the network service blocking current execution path directly.
     return _node->run();
 }

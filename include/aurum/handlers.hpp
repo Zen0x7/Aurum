@@ -21,5 +21,7 @@
 #include <aurum/handlers/ping.hpp>
 #include <aurum/handlers/identify.hpp>
 #include <aurum/handlers/discovery.hpp>
+#include <aurum/handlers/join.hpp>
+#include <aurum/handlers/leave.hpp>
 
 #endif // AURUM_HANDLERS_HPP

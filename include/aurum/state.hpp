@@ -126,6 +126,12 @@ namespace aurum {
         std::shared_mutex &get_sessions_mutex();
 
         /**
+         * @brief Retrieves a reference to the main I/O execution context safely.
+         * @return A reference to the boost::asio::io_context.
+         */
+        boost::asio::io_context& get_io_context();
+
+        /**
          * @brief Registers a new generic session into the state container.
          * @param session A shared pointer to the newly accepted session.
          * @return true if successfully added, false if a session with the same ID already exists.
@@ -158,6 +164,19 @@ namespace aurum {
          * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
          */
         void disconnect_all();
+
+        /**
+         * @brief Broadcasts a raw payload to at least one active TCP session per unique connected remote node.
+         * @param message A shared pointer to the serialized payload.
+         */
+        void broadcast_to_nodes(std::shared_ptr<const std::vector<std::uint8_t>> message);
+
+        /**
+         * @brief Transmits a raw payload targetting an explicit TCP session mapped towards a specific remote node.
+         * @param node_id The valid 16-byte target node ID.
+         * @param message A shared pointer to the serialized payload.
+         */
+        void send_to_node(boost::uuids::uuid node_id, std::shared_ptr<const std::vector<std::uint8_t>> message);
     };
 }
 

@@ -28,9 +28,9 @@
 
 namespace aurum {
 
-    websocket_session::websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state)
+    websocket_session::websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state, boost::uuids::uuid id)
         : session(protocol::websocket),
-          id_(boost::uuids::random_generator()()),
+          id_(id),
           state_(std::move(state)),
           node_id_(boost::uuids::nil_uuid()),
           port_(0),
@@ -49,6 +49,14 @@ namespace aurum {
     void websocket_session::on_accept(boost::system::error_code error_code) {
         if (!error_code) {
             ws_.binary(true);
+
+            aurum::protocol::frame_builder _builder;
+            auto _request = _builder.as_request();
+            _request.add_join(get_id(), boost::uuids::random_generator()());
+
+            auto _data = _request.get_data();
+            state_->broadcast_to_nodes(std::make_shared<std::vector<std::uint8_t>>(std::move(_data)));
+
             read_body();
         } else {
             state_->remove_session(get_id());
@@ -87,6 +95,7 @@ namespace aurum {
     }
 
     void websocket_session::read_body() {
+        // Read the WebSocket encapsulated frame.
         ws_.async_read(read_buffer_, boost::beast::bind_front_handler(&websocket_session::on_read, shared_from_this()));
     }
 
@@ -95,13 +104,9 @@ namespace aurum {
 
         if (!error_code) {
             auto _self = shared_from_this();
-
             auto _payload = std::make_shared<std::vector<std::uint8_t>>();
-
             _payload->resize(read_buffer_.size());
-
             boost::asio::buffer_copy(boost::asio::buffer(*_payload), read_buffer_.data());
-
             read_buffer_.consume(read_buffer_.size());
 
             if (const auto _response = kernel_->handle(_payload, _self); _response) {
@@ -147,5 +152,12 @@ namespace aurum {
             boost::system::error_code _ec;
             ws_.close(boost::beast::websocket::close_code::normal, _ec);
         }
+
+        aurum::protocol::frame_builder _builder;
+        auto _request = _builder.as_request();
+        _request.add_leave(get_id(), boost::uuids::random_generator()());
+
+        auto _data = _request.get_data();
+        state_->broadcast_to_nodes(std::make_shared<std::vector<std::uint8_t>>(std::move(_data)));
     }
 }

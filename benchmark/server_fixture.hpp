@@ -33,6 +33,7 @@ struct server_fixture {
     server_fixture(const int thread_count = 1) : node_(std::make_unique<aurum::node>()), thread_count_(thread_count) {
         state_ = node_->get_state();
 
+        // Start on an ephemeral port.
         state_->get_configuration().tcp_port_.store(0, std::memory_order_release);
         state_->get_configuration().threads_.store(thread_count, std::memory_order_release);
 
@@ -40,6 +41,7 @@ struct server_fixture {
             node_->run();
         });
 
+        // Wait until the server binds and the port is set.
         while (!state_->get_configuration().tcp_ready_.load(std::memory_order_acquire)) {
             std::this_thread::yield();
         }

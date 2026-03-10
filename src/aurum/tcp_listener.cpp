@@ -31,10 +31,13 @@ namespace aurum {
                       boost::asio::ip::tcp::v4(), state_->get_configuration().tcp_port_.load(std::memory_order_acquire)
                   }), socket_(io_context) {
 
+        // Store the actual bound port (in case port 0 was provided) into the state configuration atomically.
         state_->get_configuration().tcp_port_.store(acceptor_.local_endpoint().port(), std::memory_order_release);
 
+        // Mark the listener readiness flag as true to signal waiters.
         state_->get_configuration().tcp_ready_.store(true, std::memory_order_release);
 
+        // Print to standard output indicating the server port.
         std::cout << "Server is running on " << state_->get_configuration().tcp_port_.load(std::memory_order_acquire) << std::endl;
     }
 
@@ -43,6 +46,7 @@ namespace aurum {
      * @return A mutable reference to the shared state pointer.
      */
     std::shared_ptr<state> & tcp_listener::get_state() {
+        // Return a reference to the mutable shared state instance.
         return state_;
     }
 
@@ -50,6 +54,7 @@ namespace aurum {
      * @brief Starts the asynchronous connection acceptance loop.
      */
     void tcp_listener::start() {
+        // Begin the loop of accepting connections asynchronously.
         do_accept();
     }
 
@@ -57,12 +62,18 @@ namespace aurum {
      * @brief Internal method performing the asynchronous accept operation.
      */
     void tcp_listener::do_accept() {
+        // Enqueue an asynchronous operation to accept an incoming TCP socket connection.
         acceptor_.async_accept(socket_, [this] (const boost::system::error_code &error_code) {
+            // Check if the accept operation succeeded without errors.
             if (!error_code) {
+                // Create a new tcp_session instance handling the newly accepted socket connection.
                 const auto _session = std::make_shared<tcp_session>(std::move(socket_), state_);
+                // Add the newly created session to the active state tracking container.
                 state_->add_session(_session);
+                // Instruct the session to start reading its initial protocol headers.
                 _session->start();
             }
+            // Re-invoke accept to continuously wait for the next incoming connection in the loop.
             do_accept();
         });
     }

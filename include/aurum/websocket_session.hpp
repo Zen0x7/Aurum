@@ -75,8 +75,9 @@ namespace aurum {
          * @brief Constructs a new WebSocket session wrapping an accepted TCP socket.
          * @param socket The connected network endpoint socket.
          * @param state The central application state managing sessions.
+         * @param id The explicit identifier assigned dynamically to the session context safely.
          */
-        explicit websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state);
+        explicit websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state, boost::uuids::uuid id = boost::uuids::random_generator()());
 
         /**
          * @brief Initiates the WebSocket handshake securely and dispatches read loops.

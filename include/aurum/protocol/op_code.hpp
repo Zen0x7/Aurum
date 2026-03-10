@@ -33,7 +33,11 @@ namespace aurum {
         /** @brief Operational code for identifying network peer instances dynamically. */
         identify = 2,
         /** @brief Operational code for discovering connected network nodes. */
-        discovery = 3
+        discovery = 3,
+        /** @brief Operational code for joining a websocket session to the cluster registry. */
+        join = 4,
+        /** @brief Operational code for removing a websocket session from the cluster registry. */
+        leave = 5
     };
 
 }
