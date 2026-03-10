@@ -39,7 +39,6 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
     const boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
-    // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
     boost::system::error_code _ec;
     _socket.connect(_endpoint, _ec);
 
@@ -49,26 +48,20 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
     }
 
     for (auto _ : state) {
-        // Pause benchmark timer avoiding penalizing throughput with allocation logic
         state.PauseTiming();
 
-        // Allocate the header plus payload buffer entirely.
         std::vector<uint8_t> _buffer(sizeof(uint32_t) + _payload_size);
 
-        // Set header length directly to vector (Little Endian 4-bytes).
         uint32_t _header_length = static_cast<uint32_t>(_payload_size);
         boost::endian::native_to_little_inplace(_header_length);
         std::memcpy(_buffer.data(), &_header_length, sizeof(uint32_t));
 
-        // Fill body with dummy repeating data.
         if (_payload_size > 0) {
             std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
         }
 
-        // Resume benchmark timer focusing primarily over server side execution cycles processing capability
         state.ResumeTiming();
 
-        // Send buffer (header + payload body).
         boost::asio::write(_socket, boost::asio::buffer(_buffer), _ec);
         if (_ec) {
             state.SkipWithError("Failed to write to the socket.");
@@ -78,14 +71,12 @@ static void BM_TCP_Write_Throughput(benchmark::State& state) {
         benchmark::DoNotOptimize(_buffer);
     }
 
-    // Measure raw total bytes correctly.
     state.SetBytesProcessed(state.iterations() * _payload_size);
 }
 BENCHMARK(BM_TCP_Write_Throughput)->Range(8, 8192);
 
 // Benchmark measuring TCP write throughput in multithreaded environment.
 static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
-    // Setup server with thread count equal to the second range parameter
     setup_server(state.range(1));
 
     const size_t _payload_size = state.range(0);
@@ -95,7 +86,6 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
     const boost::asio::ip::tcp::endpoint _endpoint(boost::asio::ip::make_address_v4("0.0.0.0"), _port);
     boost::asio::ip::tcp::socket _socket(_client_io_context);
 
-    // Create a connection specifically for this benchmark sequence to avoid connection timing overhead in the loop.
     boost::system::error_code _error_code;
     _socket.connect(_endpoint, _error_code);
 
@@ -105,26 +95,20 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
     }
 
     for (auto _ : state) {
-        // Pause benchmark timer avoiding penalizing throughput with allocation logic
         state.PauseTiming();
 
-        // Allocate the header plus payload buffer entirely.
         std::vector<uint8_t> _buffer(sizeof(uint32_t) + _payload_size);
 
-        // Set header length directly to vector (Little Endian 4-bytes).
         uint32_t _header_length = static_cast<uint32_t>(_payload_size);
         boost::endian::native_to_little_inplace(_header_length);
         std::memcpy(_buffer.data(), &_header_length, sizeof(uint32_t));
 
-        // Fill body with dummy repeating data.
         if (_payload_size > 0) {
             std::memset(_buffer.data() + sizeof(uint32_t), 'A', _payload_size);
         }
 
-        // Resume benchmark timer focusing primarily over server side execution cycles processing capability
         state.ResumeTiming();
 
-        // Send buffer (header + payload body).
         boost::asio::write(_socket, boost::asio::buffer(_buffer), _error_code);
         if (_error_code) {
             state.SkipWithError("Failed to write to the socket.");
@@ -134,7 +118,6 @@ static void BM_TCP_Write_Throughput_MT(benchmark::State& state) {
         benchmark::DoNotOptimize(_buffer);
     }
 
-    // Measure raw total bytes correctly.
     state.SetBytesProcessed(state.iterations() * _payload_size);
 }
 
