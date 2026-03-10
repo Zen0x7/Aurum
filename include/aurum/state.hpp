@@ -30,6 +30,7 @@
 #include <functional>
 #include <array>
 #include <aurum/protocol/message_type.hpp>
+#include <aurum/session_container.hpp>
 
 namespace boost::asio {
     class io_context;
@@ -37,9 +38,9 @@ namespace boost::asio {
 
 namespace aurum {
     /**
-     * Forward tcp_session
+     * Forward session
      */
-    class tcp_session;
+    class session;
 
     /**
      * Forward state
@@ -55,21 +56,14 @@ namespace aurum {
     /** @brief Non-owning view over a received payload buffer. */
     using payload_buffer = std::span<const std::uint8_t>;
 
-    /** @brief Alias for a shared pointer to a TCP session. */
-    using shared_tcp_session = std::shared_ptr<tcp_session>;
+    /** @brief Alias for a shared pointer to a generic session. */
+    using shared_session = std::shared_ptr<session>;
 
     /** @brief Alias for a shared pointer to the application state. */
     using shared_state = std::shared_ptr<state>;
 
     /** @brief Type definition for operation handlers based on opcode. */
-    using handler_type = std::function<void(message_type, protocol::response_builder&, const transaction_id&, payload_buffer, shared_tcp_session, shared_state)>;
-
-    /** @brief Container type mapping UUIDs to active TCP sessions. */
-    using sessions_container_t = std::unordered_map<
-        boost::uuids::uuid,
-        std::shared_ptr<tcp_session>,
-        boost::hash<boost::uuids::uuid>
-    >;
+    using handler_type = std::function<void(message_type, protocol::response_builder&, const transaction_id&, payload_buffer, shared_session, shared_state)>;
 
     /**
      * @brief The core application state containing sessions, configurations, and handlers.
@@ -82,8 +76,8 @@ namespace aurum {
         /** @brief Unique identifier representing the current running node. */
         boost::uuids::uuid node_id_;
 
-        /** @brief Container holding all currently active TCP sessions. */
-        sessions_container_t sessions_;
+        /** @brief Container holding all currently active network sessions. */
+        session_container_t sessions_;
 
         /** @brief Mutex to protect concurrent access to the sessions container. */
         std::shared_mutex sessions_mutex_;
@@ -123,7 +117,7 @@ namespace aurum {
          * @brief Retrieves a mutable reference to the active sessions container.
          * @return A reference to the sessions map.
          */
-        sessions_container_t &get_sessions();
+        session_container_t &get_sessions();
 
         /**
          * @brief Retrieves a mutable reference to the active sessions container mutex.
@@ -132,14 +126,14 @@ namespace aurum {
         std::shared_mutex &get_sessions_mutex();
 
         /**
-         * @brief Registers a new TCP session into the state container.
+         * @brief Registers a new generic session into the state container.
          * @param session A shared pointer to the newly accepted session.
          * @return true if successfully added, false if a session with the same ID already exists.
          */
-        bool add_session(std::shared_ptr<tcp_session> session);
+        bool add_session(std::shared_ptr<session> session);
 
         /**
-         * @brief Removes an active TCP session by its unique identifier.
+         * @brief Removes an active generic session by its unique identifier.
          * @param id The UUID of the session to terminate.
          * @return true if a session was found and removed, false otherwise.
          */

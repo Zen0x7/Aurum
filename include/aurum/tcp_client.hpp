@@ -68,11 +68,10 @@ namespace aurum {
         void send(const std::vector<std::uint8_t>& data);
 
         /**
-         * @brief Reads a specific amount of frames returning raw payload sequences.
-         * @param frames_count The quantity of expected incoming frame sequences.
+         * @brief Reads a single frame returning raw payload sequences.
          * @return A consolidated vector containing total requested read bytes sequence mapping.
          */
-        std::vector<std::uint8_t> read(std::size_t frames_count);
+        std::vector<std::uint8_t> read();
 
         /**
          * @brief Disconnects the underlying socket closing sequence transmission cleanly.

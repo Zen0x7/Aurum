@@ -14,23 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#include <aurum/tcp_kernel.hpp>
+#include <aurum/session_kernel.hpp>
 
 #include <aurum/state.hpp>
-#include <aurum/tcp_session.hpp>
+#include <aurum/session.hpp>
 #include <iostream>
 #include <boost/crc.hpp>
 #include <boost/endian/conversion.hpp>
 #include <cstring>
 
 namespace aurum {
-    tcp_kernel::tcp_kernel(std::shared_ptr<state> state) : state_(std::move(state)) {
+    session_kernel::session_kernel(std::shared_ptr<state> state) : state_(std::move(state)) {
 
     }
 
-    std::shared_ptr<const std::vector<std::uint8_t>> tcp_kernel::handle(
+    std::shared_ptr<const std::vector<std::uint8_t>> session_kernel::handle(
             const std::shared_ptr<std::vector<std::uint8_t>> &frame,
-            std::shared_ptr<tcp_session> session) {
+            std::shared_ptr<session> session) {
 
         // Verify frame boundaries are at least minimally valid
         if (!frame || frame->size() < 2) {
@@ -163,8 +163,11 @@ namespace aurum {
             _offset += _request_length;
         }
 
+        // Determine whether to prepend the 4-byte header size matching the native underlying transport structure cleanly natively neatly exactly precisely cleanly gracefully gracefully correctly appropriately clearly.
+        bool _with_header = (session->get_type() == protocol::tcp);
+
         // Extract fully mapped serialized buffers representing operation correctly returning payloads structurally.
-        auto _response_buffers = _response_builder.get_buffers();
+        auto _response_buffers = _response_builder.get_buffers(_with_header);
 
         // Return dynamically bounded response pointer effectively handling array sequence payload return correctly.
         return std::make_shared<std::vector<std::uint8_t>>(std::move(_response_buffers));

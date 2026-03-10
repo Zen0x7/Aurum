@@ -70,43 +70,39 @@ namespace aurum {
     }
 
     /**
-     * @brief Reads a specific amount of frames returning raw payload sequences.
-     * @param frames_count The quantity of expected incoming frame sequences.
+     * @brief Reads a single frame returning raw payload sequences.
      * @return A consolidated vector containing total requested read bytes sequence mapping.
      */
-    std::vector<std::uint8_t> tcp_client::read(std::size_t frames_count) {
+    std::vector<std::uint8_t> tcp_client::read() {
         // Create buffer tracking completely reconstructed target frame sequences boundary.
         std::vector<std::uint8_t> _output_buffer;
 
-        // Traverse loops iterating requested amount limits mapping matching sequences logically.
-        for (std::size_t _i = 0; _i < frames_count; ++_i) {
-            // Define variable tracking 4 bytes frame sizing constraint limits boundaries block.
-            std::uint32_t _response_header_length = 0;
+        // Define variable tracking 4 bytes frame sizing constraint limits boundaries block.
+        std::uint32_t _response_header_length = 0;
 
-            // Trigger initial network access reading only structural constraints length indicator format natively.
-            boost::asio::read(socket_, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
+        // Trigger initial network access reading only structural constraints length indicator format natively.
+        boost::asio::read(socket_, boost::asio::buffer(&_response_header_length, sizeof(_response_header_length)));
 
-            // Reconstruct logical architecture limit constraints adapting endian formats boundary structures dynamically.
-            boost::endian::little_to_native_inplace(_response_header_length);
+        // Reconstruct logical architecture limit constraints adapting endian formats boundary structures dynamically.
+        boost::endian::little_to_native_inplace(_response_header_length);
 
-            // Dynamically allocate response bound matching newly determined length limitations constraint structure.
-            std::vector<std::uint8_t> _response_body(_response_header_length);
+        // Dynamically allocate response bound matching newly determined length limitations constraint structure.
+        std::vector<std::uint8_t> _response_body(_response_header_length);
 
-            // Fetch secondary memory array block matching rest of payload structural bindings context cleanly.
-            boost::asio::read(socket_, boost::asio::buffer(_response_body));
+        // Fetch secondary memory array block matching rest of payload structural bindings context cleanly.
+        boost::asio::read(socket_, boost::asio::buffer(_response_body));
 
-            // Extract native integer representing original transmitted native logic structure converting memory bounds natively.
-            std::uint32_t _response_header_length_le = _response_header_length;
-            // Format primitive layout targeting specific transmission constraint models matching target logically.
-            boost::endian::native_to_little_inplace(_response_header_length_le);
-            // Access raw pointer matching binary length values referencing endian variable properly.
-            auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_response_header_length_le);
+        // Extract native integer representing original transmitted native logic structure converting memory bounds natively.
+        std::uint32_t _response_header_length_le = _response_header_length;
+        // Format primitive layout targeting specific transmission constraint models matching target logically.
+        boost::endian::native_to_little_inplace(_response_header_length_le);
+        // Access raw pointer matching binary length values referencing endian variable properly.
+        auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_response_header_length_le);
 
-            // Feed reconstructed binary limits indicator tracking length natively into final buffer state boundary.
-            _output_buffer.insert(_output_buffer.end(), _header_ptr, _header_ptr + sizeof(_response_header_length_le));
-            // Append main payload response sequence context memory logic natively bound arrays correctly.
-            _output_buffer.insert(_output_buffer.end(), _response_body.begin(), _response_body.end());
-        }
+        // Feed reconstructed binary limits indicator tracking length natively into final buffer state boundary.
+        _output_buffer.insert(_output_buffer.end(), _header_ptr, _header_ptr + sizeof(_response_header_length_le));
+        // Append main payload response sequence context memory logic natively bound arrays correctly.
+        _output_buffer.insert(_output_buffer.end(), _response_body.begin(), _response_body.end());
 
         // Output complete evaluated array object capturing fully resolved payload boundary mappings cleanly.
         return _output_buffer;

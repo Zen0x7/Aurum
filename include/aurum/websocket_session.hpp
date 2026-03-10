@@ -14,12 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef AURUM_TCP_SESSION_HPP
-#define AURUM_TCP_SESSION_HPP
+#ifndef AURUM_WEBSOCKET_SESSION_HPP
+#define AURUM_WEBSOCKET_SESSION_HPP
 
 #include <memory>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <aurum/session.hpp>
 
@@ -35,10 +37,10 @@ namespace aurum {
     class session_kernel;
 
     /**
-     * @brief Represents a single client TCP connection session.
-     * @details Manages the lifecycle, asynchronous reading, and sequential writing of network frames.
+     * @brief Represents a single client WebSocket connection session.
+     * @details Manages the lifecycle, asynchronous reading, and sequential writing of WebSocket frames cleanly.
      */
-    class tcp_session : public session, public std::enable_shared_from_this<tcp_session> {
+    class websocket_session : public session, public std::enable_shared_from_this<websocket_session> {
         /** @brief Unique logical identifier for this session instance. */
         boost::uuids::uuid id_;
 
@@ -56,21 +58,33 @@ namespace aurum {
 
         /** @brief Protocol parser associated exclusively with this session. */
         std::shared_ptr<session_kernel> kernel_;
+
+        /** @brief Sequential strand execution context for safe multithreaded operation. */
+        boost::asio::strand<boost::asio::ip::tcp::socket::executor_type> strand_;
+
+        /** @brief The physical network websocket object tied to this session. */
+        boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws_;
+
+        /** @brief FIFO output buffer staging vector sequence managing async serialization overlap. */
+        std::vector<std::shared_ptr<const std::vector<std::uint8_t>>> queue_;
+
+        /** @brief Internal flat buffer required for WebSocket read operations. */
+        boost::beast::flat_buffer read_buffer_;
     public:
         /**
-         * @brief Constructs a new TCP session using an accepted socket.
+         * @brief Constructs a new WebSocket session wrapping an accepted TCP socket.
          * @param socket The connected network endpoint socket.
          * @param state The central application state managing sessions.
          */
-        explicit tcp_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state);
+        explicit websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state);
 
         /**
-         * @brief Initiates the asynchronous reading cycle for the session.
+         * @brief Initiates the WebSocket handshake securely and dispatches read loops.
          */
         void start() override;
 
         /**
-         * @brief Thread-safely queues a binary message for transmission.
+         * @brief Thread-safely queues a binary message for transmission via WebSocket frame.
          * @param message A shared pointer to the payload bytes vector.
          */
         void send(std::shared_ptr<const std::vector<std::uint8_t>> message) override;
@@ -118,45 +132,42 @@ namespace aurum {
         void set_host(const std::string& host) override;
 
         /**
-         * @brief Closes the underlying socket gracefully cleanly.
+         * @brief Closes the underlying socket gracefully mapping standard behavior natively.
          */
         void disconnect() override;
     private:
-        /**
-         * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.
-         */
-        void read_header();
 
         /**
-         * @brief Initiates an asynchronous read allocating the full payload size determined by the header.
+         * @brief Handler for websocket accept completion safely natively elegantly.
+         * @param error_code Boost system error.
+         */
+        void on_accept(boost::system::error_code error_code);
+
+        /**
+         * @brief Initiates the asynchronous read extracting the WebSocket encapsulated frame.
          */
         void read_body();
 
         /**
-         * @brief Internal dispatch method posting write operations serialized inside the strand/executor loop.
-         * @param message The payload to add to the internal buffer sequence.
+         * @brief Handler for websocket read completion.
+         * @param error_code Boost system error.
+         * @param bytes_transferred Number of bytes gracefully natively.
+         */
+        void on_read(boost::system::error_code error_code, std::size_t bytes_transferred);
+
+        /**
+         * @brief Internal dispatch method posting write operations serialized inside the strand/executor loop cleanly.
+         * @param message The payload to add to the internal buffer sequence mapped accurately.
          */
         void on_send(std::shared_ptr<const std::vector<std::uint8_t>> message);
 
         /**
-         * @brief Callback invoked when an async write cycle is completed.
+         * @brief Callback invoked when an async write cycle is completed natively tracking parameters successfully.
          * @param error_code The Boost system error status of the operation.
          * @param bytes_transferred The number of physical bytes flushed into the socket interface.
          */
         void on_write(boost::system::error_code error_code, std::size_t bytes_transferred);
-
-        /** @brief The physical network socket object tied to this session. */
-        boost::asio::ip::tcp::socket socket_;
-
-        /** @brief Sequential strand execution context for safe multithreaded operation. */
-        boost::asio::strand<boost::asio::ip::tcp::socket::executor_type> strand_;
-
-        /** @brief Cached header value defining the expected size for the incoming payload. */
-        std::uint32_t header_length_ { 0 };
-
-        /** @brief FIFO output buffer staging vector sequence managing async serialization overlap. */
-        std::vector<std::shared_ptr<const std::vector<std::uint8_t>>> queue_;
     };
 }
 
-#endif // AURUM_TCP_SESSION_HPP
+#endif // AURUM_WEBSOCKET_SESSION_HPP

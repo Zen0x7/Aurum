@@ -75,8 +75,8 @@ namespace aurum {
      * @brief Retrieves a mutable reference to the active sessions container.
      * @return A reference to the sessions map.
      */
-    sessions_container_t & state::get_sessions() {
-        // Return a mutable reference to the underlying sessions unordered_map.
+    session_container_t & state::get_sessions() {
+        // Return a mutable reference to the underlying sessions multi-index container.
         return sessions_;
     }
 
@@ -90,36 +90,38 @@ namespace aurum {
     }
 
     /**
-     * @brief Registers a new TCP session into the state container.
+     * @brief Registers a new generic session into the state container.
      * @param session A shared pointer to the newly accepted session.
      * @return true if successfully added, false if a session with the same ID already exists.
      */
-    bool state::add_session(std::shared_ptr<tcp_session> session) {
+    bool state::add_session(std::shared_ptr<session> session) {
         // Acquire an exclusive lock on the sessions container to perform thread-safe insertion.
         std::unique_lock _lock(sessions_mutex_);
-        // Attempt to insert the moved session shared_ptr mapped by its UUID.
-        auto [_, _inserted] = sessions_.insert({session->get_id(), std::move(session)});
+        // Attempt to insert the moved session shared_ptr.
+        auto [_, _inserted] = sessions_.insert(std::move(session));
         // Return whether the insertion was successful.
         return _inserted;
     }
 
     /**
-     * @brief Removes an active TCP session by its unique identifier.
+     * @brief Removes an active generic session by its unique identifier.
      * @param id The UUID of the session to terminate.
      * @return true if a session was found and removed, false otherwise.
      */
     bool state::remove_session(const boost::uuids::uuid id) {
         // Acquire an exclusive lock to safely modify the sessions container.
         std::unique_lock _lock(sessions_mutex_);
-        // Find the active mapping inside the sessions container.
-        auto _it = sessions_.find(id);
+        // Get the view mapped by ID from the multi-index container safely.
+        auto& _id_index = sessions_.get<by_id>();
+        // Find the active mapping inside the sessions container uniquely.
+        auto _it = _id_index.find(id);
         // Check if the given session actually exists.
-        if (_it != sessions_.end()) {
+        if (_it != _id_index.end()) {
             // Guarantee socket termination explicitly.
-            _it->second->disconnect();
-            // Erase the mapping completely from the state array.
-            sessions_.erase(_it);
-            // Indicate a successful deletion.
+            (*_it)->disconnect();
+            // Erase the mapping completely from the state container smoothly.
+            _id_index.erase(_it);
+            // Indicate a successful deletion natively cleanly.
             return true;
         }
 
@@ -181,7 +183,7 @@ namespace aurum {
         }
 
         // Ask the builder to resolve the enqueued payloads generating a single contiguous output frame.
-        auto [_buffer, _count] = _request.get_data();
+        auto _buffer = _request.get_data();
 
         // Feed the serialized byte vector frame seamlessly towards the open TCP session.
         _session->send(std::make_shared<std::vector<std::uint8_t>>(std::move(_buffer)));
@@ -204,10 +206,14 @@ namespace aurum {
         // Secure a scoped reader lock finding mapping target contexts efficiently without deadlocking writers.
         {
             std::unique_lock _lock(get_sessions_mutex());
-            for (const auto& [_id, _session] : get_sessions()) {
-                if (_session->get_node_id() == remote_node_id) {
-                    _sessions_to_remove.push_back(_id);
-                }
+
+            // Use the multi-index container's native optimized lookup by node_id.
+            auto& _node_id_index = sessions_.get<by_node_id>();
+            auto _range = _node_id_index.equal_range(remote_node_id);
+
+            // Collect the matching session IDs.
+            for (auto _it = _range.first; _it != _range.second; ++_it) {
+                _sessions_to_remove.push_back((*_it)->get_id());
             }
         }
 
@@ -227,8 +233,8 @@ namespace aurum {
         // Extract session targets mapping safely smoothly.
         {
             std::unique_lock _lock(get_sessions_mutex());
-            for (const auto& [_id, _session] : get_sessions()) {
-                _sessions_to_remove.push_back(_id);
+            for (const auto& _session : get_sessions()) {
+                _sessions_to_remove.push_back(_session->get_id());
             }
         }
 

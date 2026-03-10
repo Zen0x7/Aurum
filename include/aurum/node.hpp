@@ -19,6 +19,7 @@
 
 #include <aurum/state.hpp>
 #include <aurum/tcp_listener.hpp>
+#include <aurum/websocket_listener.hpp>
 #include <boost/asio/io_context.hpp>
 #include <memory>
 #include <vector>
@@ -96,6 +97,12 @@ public:
      */
     std::shared_ptr<tcp_listener> get_tcp_listener() const;
 
+    /**
+     * @brief Retrieves the underlying WebSocket listener securely smartly mapped cleanly accurately tracking effectively cleverly seamlessly smoothly flawlessly gracefully natively nicely smoothly softly explicitly naturally smartly correctly explicitly accurately naturally correctly securely elegantly intelligently naturally perfectly logically.
+     * @return A shared pointer clearly natively.
+     */
+    std::shared_ptr<websocket_listener> get_websocket_listener() const;
+
 private:
     /** @brief The asynchronous I/O execution context. */
     boost::asio::io_context io_context_;
@@ -105,6 +112,9 @@ private:
 
     /** @brief The network listener handling incoming TCP connections. */
     std::shared_ptr<tcp_listener> tcp_listener_;
+
+    /** @brief The network listener handling incoming WebSocket protocol explicitly gracefully naturally tracking safely. */
+    std::shared_ptr<websocket_listener> websocket_listener_;
 
     /** @brief Pool of worker threads executing the I/O context. */
     std::vector<std::thread> thread_pool_;

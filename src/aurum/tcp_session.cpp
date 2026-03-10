@@ -21,7 +21,7 @@
 #include <boost/asio/read.hpp>
 
 #include <boost/endian/conversion.hpp>
-#include <aurum/tcp_kernel.hpp>
+#include <aurum/session_kernel.hpp>
 
 #include <boost/uuid/random_generator.hpp>
 #include <boost/asio/write.hpp>
@@ -36,12 +36,13 @@ namespace aurum {
      * @param state The central application state managing sessions.
      */
     tcp_session::tcp_session(boost::asio::ip::tcp::socket socket,
-                             std::shared_ptr<state> state) : id_(boost::uuids::random_generator()()),
+                             std::shared_ptr<state> state) : session(protocol::tcp),
+                                                             id_(boost::uuids::random_generator()()),
                                                              state_(std::move(state)),
                                                              node_id_(boost::uuids::nil_uuid()),
                                                              port_(0),
                                                              host_(""),
-                                                             kernel_(std::make_shared<tcp_kernel>(state_)),
+                                                             kernel_(std::make_shared<session_kernel>(state_)),
                                                              socket_(std::move(socket)),
                                                              strand_(make_strand(socket_.get_executor())) {
     }
