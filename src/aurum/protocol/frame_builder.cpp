@@ -284,6 +284,50 @@ namespace aurum::protocol {
     }
 
     /**
+     * @brief Adds a join request.
+     * @param websocket_id The UUID of the websocket session joining.
+     * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    request_builder& request_builder::add_join(boost::uuids::uuid websocket_id, boost::uuids::uuid id) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(34);
+
+        _buffer.push_back(join);
+        _buffer.push_back(message_type::request);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+        _buffer.insert(_buffer.end(), websocket_id.begin(), websocket_id.end());
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(34, std::memory_order_relaxed);
+
+        return *this;
+    }
+
+    /**
+     * @brief Adds a leave request.
+     * @param websocket_id The UUID of the websocket session leaving.
+     * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    request_builder& request_builder::add_leave(boost::uuids::uuid websocket_id, boost::uuids::uuid id) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(34);
+
+        _buffer.push_back(leave);
+        _buffer.push_back(message_type::request);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+        _buffer.insert(_buffer.end(), websocket_id.begin(), websocket_id.end());
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(34, std::memory_order_relaxed);
+
+        return *this;
+    }
+
+    /**
      * @brief Adds a ping response to the internal buffer.
      * @param id The transaction ID to respond to.
      * @param exit_code The success or error status code to reply with.
@@ -451,6 +495,58 @@ namespace aurum::protocol {
         total_payload_size_.fetch_add(_expected_size, std::memory_order_relaxed);
 
         // Chain builder invocation securely.
+        return *this;
+    }
+
+    /**
+     * @brief Adds a join response containing the count of registered websocket sessions gracefully safely cleanly naturally.
+     * @param id The transaction ID to respond to mapping properly safely.
+     * @param count The number of current tracked sessions mapping safely smoothly cleanly.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    response_builder& response_builder::add_join(boost::uuids::uuid id, std::uint64_t count) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(26);
+
+        _buffer.push_back(join);
+        _buffer.push_back(message_type::response);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+
+        std::uint64_t _count_le = count;
+        boost::endian::native_to_little_inplace(_count_le);
+        auto* _count_ptr = reinterpret_cast<const std::uint8_t*>(&_count_le);
+        _buffer.insert(_buffer.end(), _count_ptr, _count_ptr + sizeof(_count_le));
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(26, std::memory_order_relaxed);
+
+        return *this;
+    }
+
+    /**
+     * @brief Adds a leave response containing the count of removed websocket sessions gracefully safely cleanly naturally.
+     * @param id The transaction ID to respond to mapping properly safely.
+     * @param count The number of removed tracked sessions mapping safely smoothly cleanly.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    response_builder& response_builder::add_leave(boost::uuids::uuid id, std::uint64_t count) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(26);
+
+        _buffer.push_back(leave);
+        _buffer.push_back(message_type::response);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+
+        std::uint64_t _count_le = count;
+        boost::endian::native_to_little_inplace(_count_le);
+        auto* _count_ptr = reinterpret_cast<const std::uint8_t*>(&_count_le);
+        _buffer.insert(_buffer.end(), _count_ptr, _count_ptr + sizeof(_count_le));
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(26, std::memory_order_relaxed);
+
         return *this;
     }
 

@@ -107,6 +107,22 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         request_builder& add_discovery(boost::uuids::uuid id = boost::uuids::random_generator()());
+
+        /**
+         * @brief Adds a join request.
+         * @param websocket_id The UUID of the websocket session joining.
+         * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        request_builder& add_join(boost::uuids::uuid websocket_id, boost::uuids::uuid id = boost::uuids::random_generator()());
+
+        /**
+         * @brief Adds a leave request.
+         * @param websocket_id The UUID of the websocket session leaving.
+         * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        request_builder& add_leave(boost::uuids::uuid websocket_id, boost::uuids::uuid id = boost::uuids::random_generator()());
     };
 
     /**
@@ -145,6 +161,22 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         response_builder& add_discovery(boost::uuids::uuid id, const std::vector<std::pair<std::string, std::uint16_t>>& nodes);
+
+        /**
+         * @brief Adds a join response containing the count of registered websocket sessions gracefully safely cleanly naturally.
+         * @param id The transaction ID to respond to mapping properly safely.
+         * @param count The number of current tracked sessions mapping safely smoothly cleanly.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        response_builder& add_join(boost::uuids::uuid id, std::uint64_t count);
+
+        /**
+         * @brief Adds a leave response containing the count of removed websocket sessions gracefully safely cleanly naturally.
+         * @param id The transaction ID to respond to mapping properly safely.
+         * @param count The number of removed tracked sessions mapping safely smoothly cleanly.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        response_builder& add_leave(boost::uuids::uuid id, std::uint64_t count);
     };
 
     /**

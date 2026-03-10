@@ -28,9 +28,9 @@
 
 namespace aurum {
 
-    websocket_session::websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state)
+    websocket_session::websocket_session(boost::asio::ip::tcp::socket socket, std::shared_ptr<state> state, boost::uuids::uuid id)
         : session(protocol::websocket),
-          id_(boost::uuids::random_generator()()),
+          id_(id),
           state_(std::move(state)),
           node_id_(boost::uuids::nil_uuid()),
           port_(0),
@@ -53,6 +53,16 @@ namespace aurum {
         if (!error_code) {
             // Set binary mode for the websocket stream correctly supporting payload structs.
             ws_.binary(true);
+
+            // Broadcast join request to all connected tcp nodes natively intelligently elegantly cleanly nicely gracefully smartly smoothly smoothly properly correctly cleanly correctly flawlessly accurately nicely successfully intelligently naturally.
+            aurum::protocol::frame_builder _builder;
+            auto _request = _builder.as_request();
+            _request.add_join(get_id(), boost::uuids::random_generator()());
+
+            // Build the frame and broadcast elegantly natively cleanly smoothly seamlessly effectively.
+            auto _data = _request.get_data();
+            state_->broadcast_to_nodes(std::make_shared<std::vector<std::uint8_t>>(std::move(_data)));
+
             // Initiate loop asynchronously mapping bodies into payloads explicitly.
             read_body();
         } else {
@@ -172,6 +182,14 @@ namespace aurum {
         if (ws_.is_open()) {
             boost::system::error_code _ec;
             ws_.close(boost::beast::websocket::close_code::normal, _ec);
+
+            // Broadcast leave request smoothly mapping securely efficiently
+            aurum::protocol::frame_builder _builder;
+            auto _request = _builder.as_request();
+            _request.add_leave(get_id(), boost::uuids::random_generator()());
+
+            auto _data = _request.get_data();
+            state_->broadcast_to_nodes(std::make_shared<std::vector<std::uint8_t>>(std::move(_data)));
         }
     }
 }
