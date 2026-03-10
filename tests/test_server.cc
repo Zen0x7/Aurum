@@ -30,7 +30,7 @@ TEST_F(tcp_server_fixture, connect_send_payload_and_disconnect) {
 
     _client->connect("127.0.0.1", _port);
 
-    wait_until([this] {
+    aurum::test_utils::wait_until([this] {
             return state_->get_sessions().size() == 1;
         });
 
@@ -179,7 +179,7 @@ TEST_F(tcp_server_fixture, connect_send_multiple_payloads_and_disconnect) {
     // Cleanup close network connection triggering server side disconnection hooks lifecycle handlers correctly
     _client->disconnect();
 
-    wait_until([this] {
+    aurum::test_utils::wait_until([this] {
         return state_->get_sessions().size() == 0;
     });
 

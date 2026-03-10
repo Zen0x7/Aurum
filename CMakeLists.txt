@@ -54,6 +54,10 @@ include_directories(include)
 include(FetchContent)
 file(GLOB_RECURSE AURUM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
+add_library(aurum_core STATIC ${AURUM_SOURCES})
+target_link_libraries(aurum_core PUBLIC ${Boost_LIBRARIES})
+target_include_directories(aurum_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 if(BUILD_TESTS)
     FetchContent_Declare(
             googletest
@@ -66,8 +70,8 @@ if(BUILD_TESTS)
     enable_testing()
     file(GLOB_RECURSE AURUM_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cc")
 
-    add_executable(tests ${AURUM_TESTS} ${AURUM_SOURCES})
-    target_link_libraries(tests PRIVATE GTest::gtest_main ${Boost_LIBRARIES})
+    add_executable(tests ${AURUM_TESTS})
+    target_link_libraries(tests PRIVATE GTest::gtest_main aurum_core)
     target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     gtest_discover_tests(tests)
 
@@ -111,12 +115,12 @@ if(BUILD_BENCHMARK)
 
     foreach(BENCHMARK_FILE ${BENCHMARK_SOURCES})
         get_filename_component(TARGET_NAME ${BENCHMARK_FILE} NAME_WE)
-        add_executable(${TARGET_NAME} ${BENCHMARK_FILE} ${AURUM_SOURCES})
+        add_executable(${TARGET_NAME} ${BENCHMARK_FILE})
         set_target_properties(${TARGET_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/benchmarks")
-        target_link_libraries(${TARGET_NAME} PRIVATE ${Boost_LIBRARIES} benchmark::benchmark benchmark::benchmark_main)
-        target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
+        target_link_libraries(${TARGET_NAME} PRIVATE aurum_core benchmark::benchmark benchmark::benchmark_main)
+        target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
     endforeach()
 endif()
 
-add_executable(aurum main.cpp ${AURUM_SOURCES})
-target_link_libraries(aurum ${Boost_LIBRARIES})
+add_executable(aurum main.cpp)
+target_link_libraries(aurum aurum_core)
