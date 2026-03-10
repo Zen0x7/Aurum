@@ -34,7 +34,6 @@ static void BM_TCP_Connect(benchmark::State& state) {
     for (auto _ : state) {
         boost::asio::ip::tcp::socket _socket(_client_io_context);
 
-        // Measure time taken to successfully connect.
         boost::system::error_code _error_code;
         _socket.connect(_endpoint, _error_code);
 
@@ -43,7 +42,6 @@ static void BM_TCP_Connect(benchmark::State& state) {
             break;
         }
 
-        // Close immediately after connecting to measure only connection time.
         _socket.close();
         benchmark::DoNotOptimize(_socket);
     }

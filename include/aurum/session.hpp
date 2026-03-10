@@ -108,7 +108,6 @@ namespace aurum {
          * @return The constant protocol::session_type enum value mapped correctly statically safely.
          */
         protocol::session_type get_type() const {
-            // Return internal transport mapping representation gracefully cleanly cleanly.
             return type_;
         }
     };

@@ -27,7 +27,6 @@ namespace aurum {
  * @details Initializes the shared state and prepares the context.
  */
 node::node() : state_(std::make_shared<state>(io_context_)) {
-    // Constructor initializes the shared state tracking configuration and sessions.
 }
 
 /**
@@ -35,7 +34,6 @@ node::node() : state_(std::make_shared<state>(io_context_)) {
  * @details Ensures that the node is properly stopped before destruction.
  */
 node::~node() {
-    // Invoke the stop procedure to ensure threads and io_context are terminated.
     stop();
 }
 
@@ -45,40 +43,29 @@ node::~node() {
  * @param argv An array of command line arguments strings.
  */
 void node::parse_args(int argc, char* argv[]) {
-    // Define variable storing active thread count parameter.
     std::size_t _threads;
 
-    // Define variable storing application listener port.
     unsigned short _port;
 
-    // Define variable storing application WebSocket listener port cleanly properly gracefully.
     unsigned short _websocket_port;
 
-    // Initialize command line options parser instance.
     boost::program_options::options_description _option_descriptions("Program options");
 
-    // Define program options with defaults for threads and port safely naturally cleanly effectively seamlessly efficiently smoothly.
     _option_descriptions.add_options()
             ("threads", boost::program_options::value<std::size_t>(&_threads)->default_value(1))
             ("port", boost::program_options::value<unsigned short>(&_port)->default_value(0))
             ("websocket_port", boost::program_options::value<unsigned short>(&_websocket_port)->default_value(0));
 
-    // Construct local variable map container.
     boost::program_options::variables_map _variables;
 
-    // Parse the command line options.
     boost::program_options::store(boost::program_options::parse_command_line(argc, argv, _option_descriptions), _variables);
 
-    // Notify the variables map to update bound variables.
     boost::program_options::notify(_variables);
 
-    // Persist parsed application port parameter into configuration.
     state_->get_configuration().tcp_port_.store(_port, std::memory_order_release);
 
-    // Persist parsed thread count into configuration.
     state_->get_configuration().threads_.store(_threads, std::memory_order_release);
 
-    // Persist parsed application websocket port securely smoothly safely smoothly explicitly correctly cleanly.
     state_->get_configuration().websocket_port_.store(_websocket_port, std::memory_order_release);
 }
 
@@ -88,43 +75,30 @@ void node::parse_args(int argc, char* argv[]) {
  * @return Exit status code of the node.
  */
 int node::run() {
-    // Register async application shutdown handlers for SIGINT and SIGTERM.
     boost::asio::signal_set _signals(io_context_, SIGINT, SIGTERM);
 
-    // Bind async wait to stop the io_context on signal.
     _signals.async_wait([&](auto, auto) { io_context_.stop(); });
 
-    // Spawn networking connection listener targeting incoming traffic.
     tcp_listener_ = std::make_shared<tcp_listener>(io_context_, state_);
 
-    // Start accepting TCP connections.
     tcp_listener_->start();
 
-    // Spawn networking websocket connection listener explicitly smoothly accurately safely correctly cleanly intelligently.
     websocket_listener_ = std::make_shared<websocket_listener>(io_context_, state_);
 
-    // Start accepting WebSocket protocol dynamically smartly safely tracking expertly smoothly smartly logically securely efficiently cleanly perfectly expertly explicitly appropriately.
     websocket_listener_->start();
 
-    // Preallocate vector capacity for worker threads.
     thread_pool_.reserve(state_->get_configuration().threads_.load(std::memory_order_acquire));
 
-    // Spawn the requested number of worker threads.
     for (std::size_t _index = 0; _index < state_->get_configuration().threads_.load(std::memory_order_acquire); ++_index) {
-        // Run the io_context in each thread.
         thread_pool_.emplace_back([this] { io_context_.run(); });
     }
 
-    // Wait for all threads to complete.
     for (auto& _thread : thread_pool_) {
-        // Check if thread is joinable before joining to prevent errors.
         if (_thread.joinable()) {
-            // Block until the thread finishes execution.
             _thread.join();
         }
     }
 
-    // Return success code.
     return 0;
 }
 
@@ -133,7 +107,6 @@ int node::run() {
  * @details Signals the IO context to stop and interrupts the running execution safely.
  */
 void node::stop() {
-    // Stop the IO context preventing further async operations.
     io_context_.stop();
 }
 
@@ -144,8 +117,6 @@ void node::stop() {
  * @return True if connection was completely established natively securely.
  */
 bool node::connect(const std::string& host, unsigned short port) {
-    // Delegate the connection logic to the application state handler properly initializing the networking request securely.
-    // By default, explicit node instances directly initiated connections request peer discovery seamlessly.
     return state_->connect(host, port, true);
 }
 
@@ -154,7 +125,6 @@ bool node::connect(const std::string& host, unsigned short port) {
  * @param remote_node_id The 16-byte identifier representing the active node context safely.
  */
 void node::disconnect(boost::uuids::uuid remote_node_id) {
-    // Pass the command to terminate the connection to the application state manager.
     state_->disconnect(remote_node_id);
 }
 
@@ -162,7 +132,6 @@ void node::disconnect(boost::uuids::uuid remote_node_id) {
  * @brief Clears dynamically all internal sessions cleanly structurally bounds efficiently securely mapped natively.
  */
 void node::disconnect_all() {
-    // Instruct the central state object to close all registered active network sessions.
     state_->disconnect_all();
 }
 
@@ -171,7 +140,6 @@ void node::disconnect_all() {
  * @return A shared pointer to the node's state.
  */
 std::shared_ptr<state> node::get_state() const {
-    // Return the internal state tracker object pointer.
     return state_;
 }
 
@@ -180,7 +148,6 @@ std::shared_ptr<state> node::get_state() const {
  * @return A shared pointer to the node's TCP listener.
  */
 std::shared_ptr<tcp_listener> node::get_tcp_listener() const {
-    // Return the internal listener instance pointer.
     return tcp_listener_;
 }
 
@@ -189,7 +156,6 @@ std::shared_ptr<tcp_listener> node::get_tcp_listener() const {
  * @return A shared pointer to the active websocket protocol handler gracefully smoothly cleanly intelligently flawlessly.
  */
 std::shared_ptr<websocket_listener> node::get_websocket_listener() const {
-    // Pass instance tracker properly intelligently mapping securely intelligently intelligently explicitly tracking efficiently gracefully naturally perfectly exactly seamlessly correctly seamlessly expertly expertly.
     return websocket_listener_;
 }
 
