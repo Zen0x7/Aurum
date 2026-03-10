@@ -51,9 +51,7 @@ namespace aurum {
      * @brief Initiates the asynchronous reading cycle for the session.
      */
     void tcp_session::start() {
-        // Post the initial read to the session's strand.
         post(strand_, [this, _self = shared_from_this()]() {
-            // Trigger the initial read operation to fetch the message header.
             read_header();
         });
     }
@@ -63,13 +61,9 @@ namespace aurum {
      * @param message A shared pointer to the payload bytes vector.
      */
     void tcp_session::send(std::shared_ptr<const std::vector<std::uint8_t>> message) {
-        // Post the write request to the socket's executor to guarantee thread safety.
         post(
-            // Access the underlying IO executor from the strand.
             strand_,
-            // Capture the session shared pointer to extend lifecycle and move the payload message.
             [this, _self = shared_from_this(), _message = message]() {
-                // Call the internal serialization dispatcher on the executor strand.
                 on_send(std::move(_message));
             }
         );
@@ -80,32 +74,17 @@ namespace aurum {
      * @param message The payload to add to the internal buffer sequence.
      */
     void tcp_session::on_send(std::shared_ptr<const std::vector<std::uint8_t>> message) {
-        // Protect the queue with a lock if multiple threads can enqueue. Actually, post to strand guarantees sequential execution.
-        // The issue is strand vs executor. socket_.get_executor() might be a thread pool, not a strand!
-        // We should explicitly use a strand if the socket executor is not a strand.
-        // Wait, Asio sockets are not strand-safe by default unless bound to one, or the caller provides one.
-        // If thread count > 1, the io_context is run by multiple threads, so completion handlers can run concurrently.
-        // Let's protect the queue.
-        // In Aurum, the session needs a strand.
 
-        // Push the new message payload to the end of the write queue.
         queue_.push_back(std::move(message));
 
-        // If the queue size is larger than 1, an async write operation is already pending.
         if (queue_.size() > 1) {
-            // Return immediately without calling async_write again to avoid overlapping operations.
             return;
         }
 
-        // Start an asynchronous write operation with the first message in the queue.
         async_write(
-            // The active TCP network socket instance.
             socket_,
-            // Provide a boost buffer referencing the active payload content safely.
             boost::asio::buffer(*queue_.front()),
-            // Attach a callback binding execution context safely tracking thread concurrency properly.
             bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& error_code, std::size_t bytes_transferred) {
-                // Route completion status to the internal callback handler.
                 on_write(error_code, bytes_transferred);
             })
         );
@@ -117,31 +96,20 @@ namespace aurum {
      * @param bytes_transferred The number of physical bytes flushed into the socket interface.
      */
     void tcp_session::on_write(boost::system::error_code error_code, std::size_t bytes_transferred) {
-        // Inform compiler that bytes_transferred is intentionally unused here to prevent warnings.
         boost::ignore_unused(bytes_transferred);
 
-        // Check if an error was emitted during the physical write attempt.
         if (error_code) {
-            // Ask the state object to gracefully destroy this broken network session instance.
             state_->remove_session(get_id());
-            // Return to stop further execution.
             return;
         }
 
-        // Drop the first queue element that has now been successfully transmitted.
         queue_.erase(queue_.begin());
 
-        // Check if there are remaining pending payloads sitting in the queue.
         if (!queue_.empty()) {
-            // Dispatch a subsequent asynchronous write for the next item in the line.
             async_write(
-                // Target the active socket connection again.
                 socket_,
-                // Map the newly-exposed front of the queue buffer container.
                 boost::asio::buffer(*queue_.front()),
-                // Attach a callback binding execution context safely preserving session lifetime appropriately.
                 bind_executor(strand_, [this, _self = shared_from_this()](const boost::system::error_code& scoped_error_code, const std::size_t scoped_bytes_transferred) {
-                    // Loop recursively invoking the write completion dispatcher.
                     on_write(scoped_error_code, scoped_bytes_transferred);
                 })
             );
@@ -153,7 +121,6 @@ namespace aurum {
      * @return The UUID assigned during initialization.
      */
     boost::uuids::uuid tcp_session::get_id() const {
-        // Return the underlying boost UUID structure.
         return id_;
     }
 
@@ -162,7 +129,6 @@ namespace aurum {
      * @return A valid UUID struct referencing the active peer node accurately.
      */
     boost::uuids::uuid tcp_session::get_node_id() const {
-        // Return the internally stored node ID structure.
         return node_id_;
     }
 
@@ -171,7 +137,6 @@ namespace aurum {
      * @param node_id The valid 16-byte node identification struct mapping.
      */
     void tcp_session::set_node_id(boost::uuids::uuid node_id) {
-        // Assign the remote node identity to this connection.
         node_id_ = node_id;
     }
 
@@ -180,7 +145,6 @@ namespace aurum {
      * @return A valid 16-bit integer representing the active peer node port accurately.
      */
     std::uint16_t tcp_session::get_port() const {
-        // Return the locally cached remote port variable.
         return port_;
     }
 
@@ -189,7 +153,6 @@ namespace aurum {
      * @param port The valid 16-bit integer representing the node port.
      */
     void tcp_session::set_port(std::uint16_t port) {
-        // Save the remote node port assigned to this specific link context.
         port_ = port;
     }
 
@@ -198,7 +161,6 @@ namespace aurum {
      * @return A valid string representing the active peer node host accurately.
      */
     std::string tcp_session::get_host() const {
-        // Return the cached host string mapped to the remote peer.
         return host_;
     }
 
@@ -207,7 +169,6 @@ namespace aurum {
      * @param host The valid string representing the node host.
      */
     void tcp_session::set_host(const std::string& host) {
-        // Store the explicitly provided remote peer host string.
         host_ = host;
     }
 
@@ -215,7 +176,6 @@ namespace aurum {
      * @brief Closes the underlying socket gracefully cleanly.
      */
     void tcp_session::disconnect() {
-        // Execute socket termination efficiently preventing memory leakage effectively.
         if (socket_.is_open()) {
             boost::system::error_code _ec;
             socket_.close(_ec);
@@ -226,22 +186,15 @@ namespace aurum {
      * @brief Initiates an asynchronous read targeting the 4-byte frame header limit.
      */
     void tcp_session::read_header() {
-        // Safely cache a reference to the active session object lifecycle.
         auto _self = shared_from_this();
-        // Request the IO context to asynchronously fetch exactly the 4-byte length header.
         async_read(socket_, boost::asio::buffer(&header_length_, sizeof(header_length_)),
                    bind_executor(strand_, [this, _self](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
-                       // Suppress the unused variable warning for transferred byte count.
                        boost::ignore_unused(bytes_transferred);
-                       // Convert the received 4 bytes from little-endian back to the host architecture format.
                        boost::endian::little_to_native_inplace(header_length_);
 
-                       // Ensure that no network issues occurred during the read block.
                        if (!error_code) {
-                           // Trigger the dynamic body reading chain passing the newly received size.
                            read_body();
                        } else {
-                           // Request that the application drops the active session from global management.
                            state_->remove_session(get_id());
                        }
                    }));
@@ -251,29 +204,19 @@ namespace aurum {
      * @brief Initiates an asynchronous read allocating the full payload size determined by the header.
      */
     void tcp_session::read_body() {
-        // Track lifecycle of the active shared connection reference for async completion.
         auto _self = shared_from_this();
-        // Dynamically instantiate a payload vector sized to perfectly fit the incoming data boundary length.
         auto _body = std::make_shared<std::vector<std::uint8_t> >(header_length_);
-        // Submit an asynchronous read targeting the active session payload socket connection.
         async_read(socket_, boost::asio::buffer(*_body),
                    bind_executor(strand_, [this, _self, _body](const boost::system::error_code &error_code, std::size_t bytes_transferred) {
-                       // Block compiler warnings marking transferred parameter explicitly as skipped over.
                        boost::ignore_unused(bytes_transferred);
-                       // Verify that no physical connection error interrupted the body reception sequence.
                        if (!error_code) {
-                           // Call the internal kernel logic parser block to process incoming buffer structures.
 
-                           // If the parsing logic returns a valid resulting payload.
                            if (const auto _response = kernel_->handle(_body, _self); _response) {
-                               // Request transmission sequence back over the TCP link wrapping the payload buffer structure.
                                send(_response);
                            }
 
-                           // Trigger the read chain back towards evaluating a new 4-byte framing structure.
                            read_header();
                        } else {
-                           // Tear down the active TCP connection resource freeing memory containers.
                            state_->remove_session(get_id());
                        }
                    }));
