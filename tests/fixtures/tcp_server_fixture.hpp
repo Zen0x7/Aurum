@@ -29,6 +29,7 @@
 #include <thread>
 #include <atomic>
 #include <memory>
+#include "../utils.hpp"
 
 class tcp_server_fixture : public ::testing::Test {
 protected:
@@ -46,7 +47,7 @@ protected:
 
         runner_thread_ = std::thread([this] { test_node_->run(); });
 
-        wait_until([this] {
+        aurum::test_utils::wait_until([this] {
             return state_->get_configuration().tcp_ready_.load() && state_->get_configuration().websocket_ready_.load();
         });
     }
@@ -55,18 +56,6 @@ protected:
         test_node_->stop();
         if (runner_thread_.joinable())
             runner_thread_.join();
-    }
-
-    template<class Predicate>
-    static void wait_until(Predicate condition,
-                           const std::chrono::milliseconds timeout = std::chrono::seconds(2)) {
-        const auto _start = std::chrono::steady_clock::now();
-        while (!condition()) {
-            if (std::chrono::steady_clock::now() - _start > timeout) {
-                FAIL() << "wait_until timeout";
-            }
-            std::this_thread::yield();
-        }
     }
 };
 

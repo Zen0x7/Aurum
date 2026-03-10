@@ -20,10 +20,33 @@
 #include <vector>
 #include <cstdint>
 #include <cstring>
+#include <chrono>
+#include <thread>
+#include <gtest/gtest.h>
 #include <boost/endian/conversion.hpp>
 #include <boost/uuid/uuid.hpp>
 
 namespace aurum::test_utils {
+
+    /**
+     * Blocks execution until a predicate condition returns true, yielding the current thread.
+     * Fails the test if the timeout limit is reached.
+     *
+     * @tparam Predicate A callable returning a boolean value.
+     * @param condition The condition to wait for.
+     * @param timeout The maximum duration to wait before timing out and failing. Defaults to 2 seconds.
+     */
+    template<class Predicate>
+    inline void wait_until(Predicate condition,
+                           const std::chrono::milliseconds timeout = std::chrono::seconds(2)) {
+        const auto _start = std::chrono::steady_clock::now();
+        while (!condition()) {
+            if (std::chrono::steady_clock::now() - _start > timeout) {
+                FAIL() << "wait_until timeout";
+            }
+            std::this_thread::yield();
+        }
+    }
 
     /**
      * Extracts a 16-bit unsigned integer from a byte buffer at the specified offset,

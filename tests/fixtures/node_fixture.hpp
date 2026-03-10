@@ -30,6 +30,7 @@
 #include <atomic>
 #include <memory>
 #include <vector>
+#include "../utils.hpp"
 
 class node_fixture : public ::testing::Test {
 protected:
@@ -59,7 +60,7 @@ protected:
         runner_thread_b_ = std::thread([this] { node_b_->run(); });
         runner_thread_c_ = std::thread([this] { node_c_->run(); });
 
-        wait_until([this] {
+        aurum::test_utils::wait_until([this] {
             return node_a_->get_state()->get_configuration().tcp_ready_.load() &&
                    node_b_->get_state()->get_configuration().tcp_ready_.load() &&
                    node_c_->get_state()->get_configuration().tcp_ready_.load();
@@ -77,18 +78,6 @@ protected:
             runner_thread_b_.join();
         if (runner_thread_c_.joinable())
             runner_thread_c_.join();
-    }
-
-    template<class Predicate>
-    static void wait_until(Predicate condition,
-                           const std::chrono::milliseconds timeout = std::chrono::seconds(2)) {
-        const auto _start = std::chrono::steady_clock::now();
-        while (!condition()) {
-            if (std::chrono::steady_clock::now() - _start > timeout) {
-                FAIL() << "wait_until timeout";
-            }
-            std::this_thread::yield();
-        }
     }
 };
 

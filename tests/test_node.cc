@@ -30,7 +30,7 @@ TEST_F(node_fixture, connect_to_node_and_send_identify_and_discovery) {
 
     _client_a->connect("127.0.0.1", _port_b);
 
-    wait_until([this] {
+    aurum::test_utils::wait_until([this] {
         return node_b_->get_state()->get_sessions().size() == 1;
     });
 
@@ -51,7 +51,7 @@ TEST_F(node_fixture, connect_to_node_and_send_identify_and_discovery) {
 
     // Wait until node b processed identify and set properties
     bool _properties_set = false;
-    wait_until([this, &_properties_set] {
+    aurum::test_utils::wait_until([this, &_properties_set] {
         std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
         for(const auto& _session : node_b_->get_state()->get_sessions()) {
             if (_session->get_node_id() == node_a_->get_state()->get_node_id() && _session->get_port() > 0 && !_session->get_host().empty()) {
@@ -99,7 +99,7 @@ TEST_F(node_fixture, connect_to_node_and_send_identify_and_discovery) {
     // Cleanup
     _client_a->disconnect();
 
-    wait_until([this] {
+    aurum::test_utils::wait_until([this] {
         return node_b_->get_state()->get_sessions().size() == 0;
     });
 }
@@ -111,11 +111,11 @@ TEST_F(node_fixture, connect_discover_nodes_and_connect_to_them) {
     ASSERT_TRUE(node_c_->connect("127.0.0.1", _port_b));
 
     // Wait until node B registers node C's connection effectively.
-    wait_until([this] { return node_b_->get_state()->get_sessions().size() == 1; });
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 1; });
 
     // Ensure node C's session correctly mapped the host and port dynamically via identify parsing.
     bool _c_properties_set = false;
-    wait_until([this, &_c_properties_set] {
+    aurum::test_utils::wait_until([this, &_c_properties_set] {
         std::shared_lock _lock(node_b_->get_state()->get_sessions_mutex());
         for (const auto& _session : node_b_->get_state()->get_sessions()) {
             if (_session->get_node_id() == node_c_->get_state()->get_node_id() && _session->get_port() > 0 && !_session->get_host().empty()) {
@@ -131,20 +131,20 @@ TEST_F(node_fixture, connect_discover_nodes_and_connect_to_them) {
     ASSERT_TRUE(node_a_->connect("127.0.0.1", _port_b));
 
     // Wait until node B correctly acknowledges the second active session.
-    wait_until([this] { return node_b_->get_state()->get_sessions().size() == 2; });
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 2; });
 
     // Because node A autonomously requested discovery within its initial frame layout,
     // the target node B automatically replied with a discovery response containing C's address.
     // Node A then automatically processes this response directly traversing its discovery handler natively.
     // Once A processes C's existence, it establishes a new link securely towards node C.
     // Therefore, node C should now have 2 active sessions (one to B, one from A).
-    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
+    aurum::test_utils::wait_until([this] { return node_c_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
 
     // Validate that node C correctly registered the connection actively sent autonomously by node A.
     ASSERT_EQ(node_c_->get_state()->get_sessions().size(), 2);
 
     // Validate node A locally recorded both connections (one to B, one to C).
-    wait_until([this] { return node_a_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
+    aurum::test_utils::wait_until([this] { return node_a_->get_state()->get_sessions().size() == 2; }, std::chrono::seconds(5));
     ASSERT_EQ(node_a_->get_state()->get_sessions().size(), 2);
 
     // Verify node B still correctly holds exactly 2 sessions (one to A, one to C).
@@ -156,6 +156,6 @@ TEST_F(node_fixture, connect_discover_nodes_and_connect_to_them) {
     node_c_->disconnect_all();
 
     // Verify closures effectively eliminated all remaining contexts.
-    wait_until([this] { return node_b_->get_state()->get_sessions().size() == 0; });
-    wait_until([this] { return node_c_->get_state()->get_sessions().size() == 0; });
+    aurum::test_utils::wait_until([this] { return node_b_->get_state()->get_sessions().size() == 0; });
+    aurum::test_utils::wait_until([this] { return node_c_->get_state()->get_sessions().size() == 0; });
 }
