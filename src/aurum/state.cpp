@@ -183,7 +183,7 @@ namespace aurum {
         }
 
         // Ask the builder to resolve the enqueued payloads generating a single contiguous output frame.
-        auto [_buffer, _count] = _request.get_data();
+        auto _buffer = _request.get_data();
 
         // Feed the serialized byte vector frame seamlessly towards the open TCP session.
         _session->send(std::make_shared<std::vector<std::uint8_t>>(std::move(_buffer)));

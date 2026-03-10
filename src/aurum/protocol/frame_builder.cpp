@@ -39,139 +39,117 @@ namespace aurum::protocol {
 
     /**
      * @brief Builds and returns a unified buffer containing all serialized frames.
-     * @details Computes necessary sizes, splits frames if limits are exceeded, and generates the final output.
+     * @param with_header Specifies if a 4-byte length header should be prepended natively.
      * @return A vector of bytes containing the fully serialized frame(s).
      */
-    std::vector<std::uint8_t> base_builder::get_buffers() {
+    std::vector<std::uint8_t> base_builder::get_buffers(bool with_header) {
         // Return only the fully serialized sequence string buffering contents representation directly.
-        return get_data().first;
+        return get_data(with_header);
     }
 
     /**
-     * @brief Builds and returns a unified buffer containing all serialized frames along with the frame count.
-     * @details Computes necessary sizes, splits payloads if max frame bounds are exceeded, and generates the final output.
-     * @return A pair where the first element is the serialized buffer and the second element is the number of frames generated.
+     * @brief Builds and returns a unified buffer containing a single serialized frame.
+     * @details Computes necessary sizes and generates the final output. Enforces a single frame sequence explicitly natively.
+     * @param with_header Specifies if a 4-byte length header should be prepended natively.
+     * @return A vector of bytes containing the fully serialized frame.
      */
-    std::pair<std::vector<std::uint8_t>, std::size_t> base_builder::get_data() {
+    std::vector<std::uint8_t> base_builder::get_data(bool with_header) {
         // Acquire a shared read lock to prevent concurrent modifications during parsing.
         std::shared_lock _lock(shared_buffers_mutex_);
 
         // Ensure there is at least one payload to avoid serializing an empty frame.
         if (buffers_.empty()) {
-            return {{}, 0};
+            return {};
         }
 
         // Initialize the output buffer where the serialized frames will be written.
         std::vector<std::uint8_t> _output_buffer;
 
-        // Track the total number of frames successfully serialized locally.
-        std::size_t _frames_count = 0;
+        // Retrieve the total number of queued payloads from the internal buffer.
+        std::size_t _total_requests = buffers_.size();
+
+        // Enforce maximum allowed requests in a single frame payload (fits in 16-bit uint).
+        constexpr std::size_t _max_requests_per_frame = 65535;
+        if (_total_requests > _max_requests_per_frame) {
+            throw std::overflow_error("Exceeded maximum number of requests for a single frame.");
+        }
 
         // Define maximum frame payload size to avoid integer overflow issues during transmission.
         constexpr std::size_t _max_frame_payload_size = 4294967295 - 131078; // theoretical max limit avoiding overflows.
 
-        // Initialize an index to track the current position in the payload list.
-        std::size_t _current_index = 0;
-        // Retrieve the total number of queued payloads from the internal buffer.
-        std::size_t _total_requests = buffers_.size();
+        // Initialize an accumulator for the total byte size of the current chunk's payload.
+        std::size_t _frame_payload_size = 0;
 
-        // Iterate through all pending payloads to group them into frame chunks.
-        while (_current_index < _total_requests) {
-            // Define maximum allowed requests in a single frame payload (fits in 16-bit uint).
-            constexpr std::size_t _max_requests_per_frame = 65535;
-            // Initialize a counter to track the number of payloads in the current chunk.
-            std::size_t _requests_in_frame = 0;
-            // Initialize an accumulator for the total byte size of the current chunk's payload.
-            std::size_t _frame_payload_size = 0;
-            // Record the starting payload index to reference the subset for the current chunk.
-            std::size_t _start_index = _current_index;
+        // Iterate over all payload items included in this frame chunk.
+        for (std::size_t _i = 0; _i < _total_requests; ++_i) {
+            _frame_payload_size += buffers_[_i].size();
+        }
 
-            // Group payloads until the chunk hits the maximum allowed items or the end of the list.
-            while (_current_index < _total_requests && _requests_in_frame < _max_requests_per_frame) {
-                // Get the byte size of the payload currently being evaluated.
-                const std::size_t _next_size = buffers_[_current_index].size();
+        // Stop processing if the current payload exceeds the maximum frame byte size.
+        if (_frame_payload_size > _max_frame_payload_size) {
+            throw std::overflow_error("Exceeded maximum payload byte size for a single frame.");
+        }
 
-                // Stop grouping if adding the current payload exceeds the maximum frame byte size.
-                if (_frame_payload_size + _next_size > _max_frame_payload_size) {
-                    // Forcefully include the payload if it is the only item in the chunk to prevent an infinite loop.
-                    if (_requests_in_frame == 0) {
-                        _frame_payload_size += _next_size;
-                        _requests_in_frame++;
-                        _current_index++;
-                    }
-                    // Exit the grouping loop to begin serializing the current chunk.
-                    break;
-                }
+        // Calculate the total number of bytes required for the frame header.
+        const std::uint32_t _header_size = sizeof(std::uint16_t) + (_total_requests * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
 
-                // Add the byte size of the current payload to the chunk's total payload size accumulator.
-                _frame_payload_size += _next_size;
-                // Increment the counter tracking the total number of payloads in the current chunk.
-                _requests_in_frame++;
-                // Advance the index to evaluate the next queued payload in the buffer.
-                _current_index++;
-            }
-
-            // Calculate the total number of bytes required for the frame header.
-            const std::uint32_t _header_size = sizeof(std::uint16_t) + (_requests_in_frame * sizeof(std::uint16_t)) + _frame_payload_size + sizeof(std::uint16_t);
-
+        if (with_header) {
             // Copy the calculated header size into a local variable to be encoded.
             std::uint32_t _header_size_le = _header_size;
             // Convert the header size from the native endianness to little endian format.
             boost::endian::native_to_little_inplace(_header_size_le);
+
             // Reinterpret the converted 32-bit integer as an array of bytes.
             auto* _header_ptr = reinterpret_cast<const std::uint8_t*>(&_header_size_le);
             // Append the little-endian encoded header size bytes to the final output buffer.
             _output_buffer.insert(_output_buffer.end(), _header_ptr, _header_ptr + sizeof(_header_size_le));
-
-            // Record the current output buffer size to use as the starting point for CRC calculation.
-            std::size_t _crc_start_offset = _output_buffer.size();
-
-            // Cast the number of requests in the frame into a 16-bit unsigned integer.
-            std::uint16_t _qty_le = static_cast<std::uint16_t>(_requests_in_frame);
-            // Convert the requests quantity to little-endian format.
-            boost::endian::native_to_little_inplace(_qty_le);
-            // Reinterpret the 16-bit requests quantity integer as an array of bytes.
-            auto* _qty_ptr = reinterpret_cast<const std::uint8_t*>(&_qty_le);
-            // Append the encoded quantity value to the output buffer.
-            _output_buffer.insert(_output_buffer.end(), _qty_ptr, _qty_ptr + sizeof(_qty_le));
-
-            // Iterate over all payload items included in this frame chunk.
-            for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Determine the size in bytes of the current payload and store it as a 16-bit integer.
-                std::uint16_t _len_le = static_cast<std::uint16_t>(buffers_[_i].size());
-                // Convert the size length value into little-endian architecture format.
-                boost::endian::native_to_little_inplace(_len_le);
-                // Cast the 16-bit length value into an addressable byte pointer.
-                auto* _len_ptr = reinterpret_cast<const std::uint8_t*>(&_len_le);
-                // Push the encoded little-endian payload length into the frame's output buffer.
-                _output_buffer.insert(_output_buffer.end(), _len_ptr, _len_ptr + sizeof(_len_le));
-            }
-
-            // Iterate sequentially over all the buffered payloads assigned to the current frame.
-            for (std::size_t _i = _start_index; _i < _current_index; ++_i) {
-                // Copy the actual raw payload bytes directly into the combined output buffer.
-                _output_buffer.insert(_output_buffer.end(), buffers_[_i].begin(), buffers_[_i].end());
-            }
-
-            // Initialize a CCITT standard CRC calculator instance.
-            boost::crc_ccitt_type _crc;
-            // Feed the constructed frame data (from quantity to end of payload) into the CRC calculator.
-            _crc.process_bytes(_output_buffer.data() + _crc_start_offset, _output_buffer.size() - _crc_start_offset);
-            // Extract the generated 16-bit checksum value from the CRC instance.
-            std::uint16_t _crc_val = _crc.checksum();
-            // Convert the calculated checksum to little-endian network representation.
-            boost::endian::native_to_little_inplace(_crc_val);
-            // Cast the checksum value to a byte pointer to allow appending.
-            auto* _crc_ptr = reinterpret_cast<const std::uint8_t*>(&_crc_val);
-            // Append the checksum bytes at the very end of the constructed frame chunk.
-            _output_buffer.insert(_output_buffer.end(), _crc_ptr, _crc_ptr + sizeof(_crc_val));
-
-            // Increment the counter tracking the successful frame generated block cleanly.
-            _frames_count++;
         }
 
-        // Return the compiled serialized array representation of the complete transaction and its frame quantity natively.
-        return std::make_pair(_output_buffer, _frames_count);
+        // Record the current output buffer size to use as the starting point for CRC calculation.
+        std::size_t _crc_start_offset = _output_buffer.size();
+
+        // Cast the number of requests in the frame into a 16-bit unsigned integer.
+        std::uint16_t _qty_le = static_cast<std::uint16_t>(_total_requests);
+        // Convert the requests quantity to little-endian format.
+        boost::endian::native_to_little_inplace(_qty_le);
+        // Reinterpret the 16-bit requests quantity integer as an array of bytes.
+        auto* _qty_ptr = reinterpret_cast<const std::uint8_t*>(&_qty_le);
+        // Append the encoded quantity value to the output buffer.
+        _output_buffer.insert(_output_buffer.end(), _qty_ptr, _qty_ptr + sizeof(_qty_le));
+
+        // Iterate over all payload items included in this frame chunk.
+        for (std::size_t _i = 0; _i < _total_requests; ++_i) {
+            // Determine the size in bytes of the current payload and store it as a 16-bit integer.
+            std::uint16_t _len_le = static_cast<std::uint16_t>(buffers_[_i].size());
+            // Convert the size length value into little-endian architecture format.
+            boost::endian::native_to_little_inplace(_len_le);
+            // Cast the 16-bit length value into an addressable byte pointer.
+            auto* _len_ptr = reinterpret_cast<const std::uint8_t*>(&_len_le);
+            // Push the encoded little-endian payload length into the frame's output buffer.
+            _output_buffer.insert(_output_buffer.end(), _len_ptr, _len_ptr + sizeof(_len_le));
+        }
+
+        // Iterate sequentially over all the buffered payloads assigned to the current frame.
+        for (std::size_t _i = 0; _i < _total_requests; ++_i) {
+            // Copy the actual raw payload bytes directly into the combined output buffer.
+            _output_buffer.insert(_output_buffer.end(), buffers_[_i].begin(), buffers_[_i].end());
+        }
+
+        // Initialize a CCITT standard CRC calculator instance.
+        boost::crc_ccitt_type _crc;
+        // Feed the constructed frame data (from quantity to end of payload) into the CRC calculator.
+        _crc.process_bytes(_output_buffer.data() + _crc_start_offset, _output_buffer.size() - _crc_start_offset);
+        // Extract the generated 16-bit checksum value from the CRC instance.
+        std::uint16_t _crc_val = _crc.checksum();
+        // Convert the calculated checksum to little-endian network representation.
+        boost::endian::native_to_little_inplace(_crc_val);
+        // Cast the checksum value to a byte pointer to allow appending.
+        auto* _crc_ptr = reinterpret_cast<const std::uint8_t*>(&_crc_val);
+        // Append the checksum bytes at the very end of the constructed frame chunk.
+        _output_buffer.insert(_output_buffer.end(), _crc_ptr, _crc_ptr + sizeof(_crc_val));
+
+        // Return the compiled serialized array representation of the complete transaction.
+        return _output_buffer;
     }
 
     /**

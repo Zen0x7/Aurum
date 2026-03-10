@@ -41,12 +41,13 @@ protected:
         state_ = test_node_->get_state();
 
         state_->get_configuration().tcp_port_.store(0);
+        state_->get_configuration().websocket_port_.store(0);
         state_->get_configuration().threads_.store(1);
 
         runner_thread_ = std::thread([this] { test_node_->run(); });
 
         wait_until([this] {
-            return state_->get_configuration().tcp_ready_.load();
+            return state_->get_configuration().tcp_ready_.load() && state_->get_configuration().websocket_ready_.load();
         });
     }
 

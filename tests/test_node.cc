@@ -39,13 +39,13 @@ TEST_F(node_fixture, ConnectIdentifyAndDiscovery) {
     boost::uuids::uuid _transaction_id_discovery = boost::uuids::random_generator()();
 
     // Node A sends identify with its own port and host
-    auto [_data_identify, _frames_count_identify] = _client_a->get_builder()
+    auto _data_identify = _client_a->get_builder()
         .add_identify(node_a_->get_state()->get_node_id(), _transaction_id_identify, _port_a, "127.0.0.1")
         .get_data();
 
     _client_a->send(_data_identify);
 
-    const auto _response_identify = _client_a->read(_frames_count_identify);
+    const auto _response_identify = _client_a->read();
     ASSERT_GE(_response_identify.size(), 8);
 
     // Wait until node b processed identify and set properties
@@ -66,13 +66,13 @@ TEST_F(node_fixture, ConnectIdentifyAndDiscovery) {
     _client_a->get_builder().flush();
 
     // Node A sends discovery to Node B
-    auto [_data_discovery, _frames_count_discovery] = _client_a->get_builder()
+    auto _data_discovery = _client_a->get_builder()
         .add_discovery(_transaction_id_discovery)
         .get_data();
 
     _client_a->send(_data_discovery);
 
-    const auto _response_discovery = _client_a->read(_frames_count_discovery);
+    const auto _response_discovery = _client_a->read();
 
     ASSERT_GE(_response_discovery.size(), 8);
 

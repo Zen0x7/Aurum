@@ -163,8 +163,11 @@ namespace aurum {
             _offset += _request_length;
         }
 
+        // Determine whether to prepend the 4-byte header size matching the native underlying transport structure cleanly natively neatly exactly precisely cleanly gracefully gracefully correctly appropriately clearly.
+        bool _with_header = (session->get_type() == protocol::tcp);
+
         // Extract fully mapped serialized buffers representing operation correctly returning payloads structurally.
-        auto _response_buffers = _response_builder.get_buffers();
+        auto _response_buffers = _response_builder.get_buffers(_with_header);
 
         // Return dynamically bounded response pointer effectively handling array sequence payload return correctly.
         return std::make_shared<std::vector<std::uint8_t>>(std::move(_response_buffers));

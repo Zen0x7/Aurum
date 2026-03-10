@@ -19,6 +19,7 @@
 #include <boost/crc.hpp>
 #include <aurum/protocol.hpp>
 #include <aurum/tcp_client.hpp>
+#include <aurum/websocket_client.hpp>
 
 TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     const unsigned short _port =
@@ -38,13 +39,13 @@ TEST_F(tcp_server_fixture, ConnectSendPayloadAndDisconnect) {
     const boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
 
     // Construct request resolving serialized payload bounds format correctly.
-    auto [_data, _frames_count] = _client->get_builder().add_ping(_transaction_id).get_data();
+    auto _data = _client->get_builder().add_ping(_transaction_id).get_data();
 
     // Send payload matching defined connection interface rules completely cleanly.
     _client->send(_data);
 
     // Process incoming responses targeting expected frames boundaries mappings naturally.
-    const auto _response = _client->read(_frames_count);
+    const auto _response = _client->read();
 
     // The read buffer should contain at least the 4-byte header, 2-byte qty, and 2-byte crc.
     ASSERT_GE(_response.size(), 8);
@@ -128,7 +129,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     boost::uuids::uuid _transaction_id_3 = boost::uuids::random_generator()();
 
     // Construct the bundled sequence request tracking frame dimension mappings securely.
-    auto [_data, _frames_count] = _client->get_builder()
+    auto _data = _client->get_builder()
         .add_ping(_transaction_id_1)
         .add_ping(_transaction_id_2)
         .add_ping(_transaction_id_3)
@@ -138,7 +139,7 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     _client->send(_data);
 
     // Process all incoming multiplexed response mappings strictly cleanly.
-    auto _response = _client->read(_frames_count);
+    auto _response = _client->read();
 
     // Ensure adequate buffer dimension layout matching required minimal boundary sizes natively.
     ASSERT_GE(_response.size(), 8);
@@ -218,6 +219,86 @@ TEST_F(tcp_server_fixture, ConnectSendMultiplePayloadsAndDisconnect) {
     wait_until([this] {
         return state_->get_sessions().size() == 0;
     });
+
+    ASSERT_EQ(state_->get_sessions().size(), 0);
+}
+
+TEST_F(tcp_server_fixture, ConnectWebSocketSendPayloadAndDisconnect) {
+    const unsigned short _port =
+            state_->get_configuration().websocket_port_.load(std::memory_order_acquire);
+
+    const auto _client = std::make_shared<aurum::websocket_client>();
+
+    ASSERT_TRUE(_client->connect("127.0.0.1", _port));
+
+    wait_until([this] {
+            return state_->get_sessions().size() == 1;
+        });
+
+    ASSERT_EQ(state_->get_sessions().size(), 1);
+
+    // Generate a random UUID to track the test ping transaction uniquely.
+    const boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
+
+    // Construct request resolving serialized payload bounds format correctly explicitly omitting the TCP 4 byte header limits structure reliably cleanly perfectly natively exactly logically.
+    auto _data = _client->get_builder().as_request().add_ping(_transaction_id).get_data(false);
+
+    // Send payload matching defined websocket interface structurally cleanly safely mapping reliably cleanly nicely cleanly clearly.
+    _client->send(_data);
+
+    // Process incoming responses targeting expected frames boundaries mappings naturally.
+    const auto _response = _client->read();
+
+    // The read buffer should contain at least the 2-byte qty, and 2-byte crc since the 4-byte header is excluded naturally reliably.
+    ASSERT_GE(_response.size(), 4);
+
+    // Declare quantity received placeholder tracker explicitly mapping properly.
+    std::uint16_t _response_quantity;
+
+    // Extract the number of elements bundled in the server response frame cleanly neatly implicitly logically smoothly explicitly flawlessly.
+    std::memcpy(&_response_quantity, _response.data(), sizeof(_response_quantity));
+
+    // Convert the elements quantity from little-endian back to native architecture.
+    boost::endian::little_to_native_inplace(_response_quantity);
+
+    // Ensure the server returned exactly one response matching our single ping securely.
+    ASSERT_EQ(_response_quantity, 1);
+
+    // Declare length parameter to capture response specific element length limit.
+    std::uint16_t _response_length;
+
+    // Copy the length of the first parsed response from the payload structure.
+    std::memcpy(&_response_length, _response.data() + 2, sizeof(_response_length));
+
+    // Correct memory formatting for native little endian processing unit architectures.
+    boost::endian::little_to_native_inplace(_response_length);
+
+    // Ensure the ping response size matches the exact expected layout (1-byte opcode + 1-byte type + 16-byte UUID + 1-byte exit code).
+    ASSERT_EQ(_response_length, 19);
+
+    // Check correct operational mapping parameter opcode returning properly cleanly.
+    ASSERT_EQ(_response[4], aurum::op_code::ping);
+
+    // Check explicit mapping parameter returned matches valid message response explicitly.
+    ASSERT_EQ(_response[5], aurum::message_type::response);
+
+    // Generate tracker checking explicit target uuid safely.
+    boost::uuids::uuid _response_uuid;
+
+    // Extract directly transaction identifier effectively cleanly logically.
+    std::memcpy(_response_uuid.data, _response.data() + 6, 16);
+
+    // Validate memory transaction targets effectively matching correctly.
+    ASSERT_EQ(_response_uuid, _transaction_id);
+
+    // Verify exit sequence code returns zero gracefully correctly representing successful execution structurally.
+    ASSERT_EQ(_response[22], aurum::exit_code::success);
+
+    _client->disconnect();
+
+    wait_until([this] {
+            return state_->get_sessions().size() == 0;
+        });
 
     ASSERT_EQ(state_->get_sessions().size(), 0);
 }
