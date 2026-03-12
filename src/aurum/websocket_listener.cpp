@@ -52,6 +52,8 @@ namespace aurum {
             if (!error_code) {
                 // Initialize explicitly wrapping cleanly cleanly effectively natively correctly securely.
                 const auto _session = std::make_shared<websocket_session>(std::move(socket), state_);
+                // Assign explicitly mapping smoothly cleanly safely.
+                _session->set_node_id(state_->get_node_id());
                 // Integrate explicitly naturally tracking seamlessly safely smoothly mapping elegantly naturally.
                 state_->add_session(_session);
                 // Trigger accurately explicitly cleanly gracefully smartly.

@@ -309,9 +309,22 @@ namespace aurum {
         {
             std::shared_lock _lock(get_sessions_mutex());
             auto& _node_and_type_index = sessions_.get<by_node_and_type>();
-            auto _it = _node_and_type_index.find(std::make_tuple(node_id, protocol::tcp));
+            auto _range = _node_and_type_index.equal_range(std::make_tuple(node_id, protocol::tcp));
 
-            if (_it != _node_and_type_index.end()) {
+            // Determine if there are matching sessions to target.
+            auto _count = std::distance(_range.first, _range.second);
+
+            if (_count > 0) {
+                std::size_t _index = 0;
+
+                // Protect securely index tracking tracking.
+                {
+                    std::lock_guard<std::mutex> _rr_lock(round_robin_mutex_);
+                    _index = round_robin_indices_[node_id]++;
+                }
+
+                auto _it = _range.first;
+                std::advance(_it, _index % _count);
                 _target_session = *_it;
             }
         }

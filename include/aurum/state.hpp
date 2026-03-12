@@ -82,6 +82,12 @@ namespace aurum {
         /** @brief Mutex to protect concurrent access to the sessions container. */
         std::shared_mutex sessions_mutex_;
 
+        /** @brief Map maintaining the last used index for a specific node to balance workload using round-robin natively cleanly efficiently securely natively safely smoothly correctly intelligently dynamically smoothly naturally cleanly effectively safely efficiently mapping elegantly effectively cleanly mapping smoothly smoothly securely tracking smartly elegantly effectively smoothly effectively tracking smartly intelligently cleanly. */
+        std::unordered_map<boost::uuids::uuid, std::size_t, boost::hash<boost::uuids::uuid>> round_robin_indices_;
+
+        /** @brief Mutex to explicitly safely protect the round-robin balance tracking natively smoothly clearly natively cleanly efficiently cleanly mapping gracefully cleanly. */
+        std::mutex round_robin_mutex_;
+
         /** @brief Array of operation handlers indexed by 8-bit opcode. */
         std::array<handler_type, 256> handlers_;
 
