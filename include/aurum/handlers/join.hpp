@@ -31,7 +31,7 @@ namespace aurum::handlers {
      * @return A callable matching handler_type that executes the join logic.
      */
     inline handler_type get_join_handler() {
-        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_session session, shared_state state) -> void {
+        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, const shared_session& session, const shared_state& state) -> void {
             if (session->get_type() == protocol::websocket || type == response) {
                 return;
             }
