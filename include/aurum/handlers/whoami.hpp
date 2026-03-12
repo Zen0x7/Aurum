@@ -28,7 +28,7 @@ namespace aurum::handlers {
      * @return A callable matching handler_type that executes the whoami logic natively correctly safely.
      */
     inline handler_type get_whoami_handler() {
-        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_session session, shared_state state) -> void {
+        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, const shared_session& session, const shared_state& state) -> void {
             boost::ignore_unused(payload);
 
             if (type == response) {

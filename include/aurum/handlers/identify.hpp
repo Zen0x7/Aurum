@@ -31,7 +31,7 @@ namespace aurum::handlers {
      */
     inline handler_type get_identify_handler() {
         // Return a lambda capturing nothing, taking the required handler_type arguments.
-        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, shared_session session, shared_state state) -> void {
+        return [](message_type type, protocol::response_builder& builder, const transaction_id& transaction_id, payload_buffer payload, const shared_session& session, const shared_state& state) -> void {
             // Ensure the payload size matches the expected length for a UUID (16 bytes).
             if (payload.size() < 16) {
                 // If it's too small, just return gracefully to prevent out-of-bounds errors.

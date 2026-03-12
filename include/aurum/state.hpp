@@ -63,7 +63,7 @@ namespace aurum {
     using shared_state = std::shared_ptr<state>;
 
     /** @brief Type definition for operation handlers based on opcode. */
-    using handler_type = std::function<void(message_type, protocol::response_builder&, const transaction_id&, payload_buffer, shared_session, shared_state)>;
+    using handler_type = std::function<void(message_type, protocol::response_builder&, const transaction_id&, payload_buffer, const shared_session&, const shared_state&)>;
 
     /**
      * @brief The core application state containing sessions, configurations, and handlers.
