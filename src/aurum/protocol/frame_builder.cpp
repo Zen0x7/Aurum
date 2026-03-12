@@ -306,6 +306,52 @@ namespace aurum::protocol {
     }
 
     /**
+     * @brief Adds a whoami response containing the active session information.
+     * @param id The transaction ID to respond to.
+     * @param session_id The unique identifier of the active requesting session.
+     * @param node_id The 16-byte identifier representing the active node context.
+     * @param type The active underlying connection mapped protocol securely.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    response_builder& response_builder::add_whoami(boost::uuids::uuid id, boost::uuids::uuid session_id, boost::uuids::uuid node_id, protocol::session_type type) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(51); // 1 (opcode) + 1 (type) + 16 (id) + 16 (session_id) + 16 (node_id) + 1 (session_type)
+
+        _buffer.push_back(whoami);
+        _buffer.push_back(message_type::response);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+        _buffer.insert(_buffer.end(), session_id.begin(), session_id.end());
+        _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
+        _buffer.push_back(static_cast<std::uint8_t>(type));
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(51, std::memory_order_relaxed);
+
+        return *this;
+    }
+
+    /**
+     * @brief Adds a whoami request.
+     * @param id An optional explicit transaction ID, generated automatically if not provided.
+     * @return A reference to the active builder instance for method chaining.
+     */
+    request_builder& request_builder::add_whoami(boost::uuids::uuid id) {
+        std::vector<std::uint8_t> _buffer;
+        _buffer.reserve(18);
+
+        _buffer.push_back(whoami);
+        _buffer.push_back(message_type::request);
+        _buffer.insert(_buffer.end(), id.begin(), id.end());
+
+        std::unique_lock _lock(shared_buffers_mutex_);
+        buffers_.push_back(std::move(_buffer));
+        total_payload_size_.fetch_add(18, std::memory_order_relaxed);
+
+        return *this;
+    }
+
+    /**
      * @brief Adds a leave request.
      * @param websocket_id The UUID of the websocket session leaving.
      * @param id An optional explicit transaction ID, generated automatically if not provided.

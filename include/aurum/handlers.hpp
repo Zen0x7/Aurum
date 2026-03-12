@@ -23,5 +23,6 @@
 #include <aurum/handlers/discovery.hpp>
 #include <aurum/handlers/join.hpp>
 #include <aurum/handlers/leave.hpp>
+#include <aurum/handlers/whoami.hpp>
 
 #endif // AURUM_HANDLERS_HPP

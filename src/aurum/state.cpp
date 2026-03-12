@@ -48,6 +48,9 @@ namespace aurum {
 
         // Bind opcode leave mapping logic.
         handlers_[leave] = handlers::get_leave_handler();
+
+        // Bind opcode whoami to the identity self-resolution handler seamlessly natively cleanly.
+        handlers_[whoami] = handlers::get_whoami_handler();
     }
 
     /**

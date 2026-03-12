@@ -91,6 +91,115 @@ TEST_F(tcp_server_fixture, connect_send_payload_and_disconnect) {
     ASSERT_EQ(state_->get_sessions().size(), 0);
 }
 
+TEST_F(tcp_server_fixture, connect_tcp_send_whoami_and_disconnect) {
+    const unsigned short _port =
+            state_->get_configuration().tcp_port_.load(std::memory_order_acquire);
+
+    const auto _client = std::make_shared<aurum::tcp_client>();
+
+    _client->connect("127.0.0.1", _port);
+
+    aurum::test_utils::wait_until([this] {
+            return state_->get_sessions().size() == 1;
+        });
+
+    ASSERT_EQ(state_->get_sessions().size(), 1);
+
+    const boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
+
+    auto _data = _client->get_builder().add_whoami(_transaction_id).get_data();
+
+    _client->send(_data);
+
+    const auto _response = _client->read();
+
+    ASSERT_GE(_response.size(), 8);
+
+    const auto _response_quantity = aurum::test_utils::read_uint16_le(_response, 4);
+    ASSERT_EQ(_response_quantity, 1);
+
+    const auto _response_length = aurum::test_utils::read_uint16_le(_response, 6);
+    ASSERT_EQ(_response_length, 51); // 1 (opcode) + 1 (type) + 16 (id) + 16 (session_id) + 16 (node_id) + 1 (session_type)
+
+    ASSERT_EQ(_response[8], aurum::op_code::whoami);
+    ASSERT_EQ(_response[9], aurum::message_type::response);
+
+    const auto _response_transaction_id = aurum::test_utils::read_uuid(_response, 10);
+    ASSERT_EQ(_transaction_id, _response_transaction_id);
+
+    const auto _response_session_id = aurum::test_utils::read_uuid(_response, 26);
+    const auto _response_node_id = aurum::test_utils::read_uuid(_response, 42);
+    const auto _response_session_type = _response[58];
+
+    // the server has 1 session, check its id and node id
+    auto _session_it = state_->get_sessions().begin();
+    ASSERT_EQ(_response_session_id, (*_session_it)->get_id());
+    ASSERT_EQ(_response_node_id, state_->get_node_id());
+    ASSERT_EQ(_response_session_type, aurum::protocol::session_type::tcp);
+
+    _client->disconnect();
+
+    aurum::test_utils::wait_until([this] {
+        return state_->get_sessions().size() == 0;
+    });
+
+    ASSERT_EQ(state_->get_sessions().size(), 0);
+}
+
+TEST_F(tcp_server_fixture, connect_websocket_send_whoami_and_disconnect) {
+    const unsigned short _port =
+            state_->get_configuration().websocket_port_.load(std::memory_order_acquire);
+
+    const auto _client = std::make_shared<aurum::websocket_client>();
+
+    ASSERT_TRUE(_client->connect("127.0.0.1", _port));
+
+    aurum::test_utils::wait_until([this] {
+            return state_->get_sessions().size() == 1;
+        });
+
+    ASSERT_EQ(state_->get_sessions().size(), 1);
+
+    const boost::uuids::uuid _transaction_id = boost::uuids::random_generator()();
+
+    auto _data = _client->get_builder().as_request().add_whoami(_transaction_id).get_data(false);
+
+    _client->send(_data);
+
+    const auto _response = _client->read();
+
+    ASSERT_GE(_response.size(), 4);
+
+    const auto _response_quantity = aurum::test_utils::read_uint16_le(_response, 0);
+    ASSERT_EQ(_response_quantity, 1);
+
+    const auto _response_length = aurum::test_utils::read_uint16_le(_response, 2);
+    ASSERT_EQ(_response_length, 51);
+
+    ASSERT_EQ(_response[4], aurum::op_code::whoami);
+    ASSERT_EQ(_response[5], aurum::message_type::response);
+
+    const auto _response_transaction_id = aurum::test_utils::read_uuid(_response, 6);
+    ASSERT_EQ(_response_transaction_id, _transaction_id);
+
+    const auto _response_session_id = aurum::test_utils::read_uuid(_response, 22);
+    const auto _response_node_id = aurum::test_utils::read_uuid(_response, 38);
+    const auto _response_session_type = _response[54];
+
+    auto _session_it = state_->get_sessions().begin();
+    ASSERT_EQ(_response_session_id, (*_session_it)->get_id());
+    ASSERT_EQ(_response_node_id, state_->get_node_id());
+    ASSERT_EQ(_response_session_type, aurum::protocol::session_type::websocket);
+
+    _client->disconnect();
+
+    aurum::test_utils::wait_until([this] {
+            return state_->get_sessions().size() == 0;
+        });
+
+    ASSERT_EQ(state_->get_sessions().size(), 0);
+}
+
 TEST_F(tcp_server_fixture, connect_send_multiple_payloads_and_disconnect) {
     const unsigned short _port =
             state_->get_configuration().tcp_port_.load(std::memory_order_acquire);

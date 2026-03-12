@@ -24,6 +24,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 #include <aurum/protocol/message_type.hpp>
+#include <aurum/protocol/session_type.hpp>
 
 namespace aurum::protocol {
 
@@ -123,6 +124,13 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         request_builder& add_leave(boost::uuids::uuid websocket_id, boost::uuids::uuid id = boost::uuids::random_generator()());
+
+        /**
+         * @brief Adds a whoami request.
+         * @param id An optional explicit transaction ID, generated automatically if not provided.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        request_builder& add_whoami(boost::uuids::uuid id = boost::uuids::random_generator()());
     };
 
     /**
@@ -177,6 +185,16 @@ namespace aurum::protocol {
          * @return A reference to the active builder instance for method chaining.
          */
         response_builder& add_leave(boost::uuids::uuid id, std::uint64_t count);
+
+        /**
+         * @brief Adds a whoami response containing the active session information.
+         * @param id The transaction ID to respond to.
+         * @param session_id The unique identifier of the active requesting session.
+         * @param node_id The 16-byte identifier representing the active node context.
+         * @param type The active underlying connection mapped protocol securely.
+         * @return A reference to the active builder instance for method chaining.
+         */
+        response_builder& add_whoami(boost::uuids::uuid id, boost::uuids::uuid session_id, boost::uuids::uuid node_id, protocol::session_type type);
     };
 
     /**
