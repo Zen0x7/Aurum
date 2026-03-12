@@ -54,6 +54,9 @@ void node::parse_args(int argc, char* argv[]) {
     // Define variable storing application WebSocket listener port cleanly properly gracefully.
     unsigned short _websocket_port;
 
+    // Define variable storing number of concurrent connections per node natively cleanly.
+    std::uint16_t _connections_per_node;
+
     // Initialize command line options parser instance.
     boost::program_options::options_description _option_descriptions("Program options");
 
@@ -61,7 +64,8 @@ void node::parse_args(int argc, char* argv[]) {
     _option_descriptions.add_options()
             ("threads", boost::program_options::value<std::size_t>(&_threads)->default_value(1))
             ("port", boost::program_options::value<unsigned short>(&_port)->default_value(0))
-            ("websocket_port", boost::program_options::value<unsigned short>(&_websocket_port)->default_value(0));
+            ("websocket_port", boost::program_options::value<unsigned short>(&_websocket_port)->default_value(0))
+            ("connections_per_node", boost::program_options::value<std::uint16_t>(&_connections_per_node)->default_value(1));
 
     // Construct local variable map container.
     boost::program_options::variables_map _variables;
@@ -80,6 +84,9 @@ void node::parse_args(int argc, char* argv[]) {
 
     // Persist parsed application websocket port securely smoothly safely smoothly explicitly correctly cleanly.
     state_->get_configuration().websocket_port_.store(_websocket_port, std::memory_order_release);
+
+    // Persist parsed connections per node securely explicitly seamlessly natively efficiently.
+    state_->get_configuration().connections_per_node_.store(_connections_per_node, std::memory_order_release);
 }
 
 /**
@@ -146,7 +153,8 @@ void node::stop() {
 bool node::connect(const std::string& host, unsigned short port) {
     // Delegate the connection logic to the application state handler properly initializing the networking request securely.
     // By default, explicit node instances directly initiated connections request peer discovery seamlessly.
-    return state_->connect(host, port, true);
+    // Also pass the initial connections per node from the configuration properly cleanly correctly.
+    return state_->connect(host, port, true, state_->get_configuration().connections_per_node_.load(std::memory_order_relaxed));
 }
 
 /**

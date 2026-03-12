@@ -196,16 +196,17 @@ namespace aurum::protocol {
     /**
      * @brief Adds an identify request containing the local node identifier.
      * @param node_id The 16-byte identifier representing the active node context.
+     * @param connections_per_node The defined concurrent connections mapped accurately tracking efficiently.
      * @param id An optional explicit transaction ID, generated automatically if not provided.
-     * @param port The optional target port mapping correctly accurately.
-     * @param host The optional target host string mapping cleanly correctly.
+     * @param port The target port mapping correctly accurately.
+     * @param host The target host string mapping cleanly correctly.
      * @return A reference to the active builder instance for method chaining.
      */
-    request_builder& request_builder::add_identify(boost::uuids::uuid node_id, boost::uuids::uuid id, std::uint16_t port, const std::string& host) {
+    request_builder& request_builder::add_identify(boost::uuids::uuid node_id, std::uint16_t connections_per_node, boost::uuids::uuid id, std::uint16_t port, const std::string& host) {
         // Allocate a dedicated array matching identify payload memory footprint structures securely.
         std::vector<std::uint8_t> _buffer;
-        // Start counting the required payload capacity initialized to 34 bytes for the basic payload structure.
-        std::size_t _expected_size = 34;
+        // Start counting the required payload capacity initialized to 36 bytes for the basic payload structure (34 + 2 bytes connections).
+        std::size_t _expected_size = 36;
 
         // Evaluate if either the port or host variables were supplied.
         if (port != 0 || !host.empty()) {
@@ -224,6 +225,15 @@ namespace aurum::protocol {
         _buffer.insert(_buffer.end(), id.begin(), id.end());
         // Track unique structural identifier matching local state context explicitly seamlessly correctly safely.
         _buffer.insert(_buffer.end(), node_id.begin(), node_id.end());
+
+        // Structure connections variable cleanly natively properly correctly matching logic natively.
+        std::uint16_t _connections_le = connections_per_node;
+        // Decode the integer to match little-endian network architecture natively.
+        boost::endian::native_to_little_inplace(_connections_le);
+        // Interpret the little-endian integer variable as a byte pointer.
+        auto* _connections_ptr = reinterpret_cast<const std::uint8_t*>(&_connections_le);
+        // Append the 2 bytes of the connections per node correctly natively seamlessly safely cleanly mapping efficiently accurately.
+        _buffer.insert(_buffer.end(), _connections_ptr, _connections_ptr + sizeof(_connections_le));
 
         // Process optional arguments appending corresponding dynamic payload natively matching formats.
         if (port != 0 || !host.empty()) {

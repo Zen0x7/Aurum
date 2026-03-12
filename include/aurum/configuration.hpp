@@ -31,6 +31,9 @@ namespace aurum {
       /** @brief TCP port where the listener is currently bound. */
       std::atomic<unsigned short> tcp_port_{0};
 
+      /** @brief The number of connections permitted per node in the network. */
+      std::atomic<std::uint16_t> connections_per_node_{1};
+
       /** @brief Flag indicating if the TCP listener is fully initialized and ready. */
       std::atomic<bool> tcp_ready_{false};
 
