@@ -37,7 +37,9 @@ namespace aurum {
         /** @brief Operational code for joining a websocket session to the cluster registry. */
         join = 4,
         /** @brief Operational code for removing a websocket session from the cluster registry. */
-        leave = 5
+        leave = 5,
+        /** @brief Operational code for requesting the current session and node identity parameters natively. */
+        whoami = 6
     };
 
 }
