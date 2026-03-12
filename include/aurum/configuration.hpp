@@ -28,6 +28,9 @@ namespace aurum {
       /** @brief Number of active worker threads for IO operations. */
       std::atomic<std::size_t> threads_ {1};
 
+      /** @brief Number of active connections desired per remote node. */
+      std::atomic<std::uint16_t> connections_per_node_{1};
+
       /** @brief TCP port where the listener is currently bound. */
       std::atomic<unsigned short> tcp_port_{0};
 

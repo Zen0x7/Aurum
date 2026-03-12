@@ -155,10 +155,11 @@ namespace aurum {
          * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
          * @param host The remote peer IP address structurally mapped string.
          * @param port The target destination listener port integer properly.
+         * @param requested_connections The desired number of connections for the target node.
          * @param with_discovery Boolean indicating if the initial connection payload should append a discovery request.
          * @return True if connection was completely established natively securely.
          */
-        bool connect(const std::string& host, unsigned short port, bool with_discovery = false);
+        bool connect(const std::string& host, unsigned short port, std::uint16_t requested_connections = 0, bool with_discovery = false);
 
         /**
          * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.

@@ -146,7 +146,7 @@ void node::stop() {
 bool node::connect(const std::string& host, unsigned short port) {
     // Delegate the connection logic to the application state handler properly initializing the networking request securely.
     // By default, explicit node instances directly initiated connections request peer discovery seamlessly.
-    return state_->connect(host, port, true);
+    return state_->connect(host, port, state_->get_configuration().connections_per_node_.load(), true);
 }
 
 /**

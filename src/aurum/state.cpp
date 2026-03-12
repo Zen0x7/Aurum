@@ -152,10 +152,11 @@ namespace aurum {
      * @brief Establishes a synchronous outbound network connection directly towards a peer instance.
      * @param host The remote peer IP address structurally mapped string.
      * @param port The target destination listener port integer properly.
+     * @param requested_connections The desired number of connections for the target node.
      * @param with_discovery Boolean indicating if the initial connection payload should append a discovery request.
      * @return True if connection was completely established natively securely.
      */
-    bool state::connect(const std::string& host, unsigned short port, bool with_discovery) {
+    bool state::connect(const std::string& host, unsigned short port, std::uint16_t requested_connections, bool with_discovery) {
         // Initialize an empty socket instance bound to the application thread IO context.
         boost::asio::ip::tcp::socket _socket(io_context_);
         // Create an IP resolver to convert hostnames to valid network endpoints.
@@ -193,7 +194,7 @@ namespace aurum {
         auto _request = _builder.as_request();
 
         // Enqueue an identify payload including the local host string representation and port.
-        _request.add_identify(get_node_id(), boost::uuids::random_generator()(), get_configuration().tcp_port_.load(), "127.0.0.1");
+        _request.add_identify(get_node_id(), requested_connections, boost::uuids::random_generator()(), get_configuration().tcp_port_.load(), "127.0.0.1");
 
         // Verify if a discovery operation was explicitly requested for this new connection context.
         if (with_discovery) {

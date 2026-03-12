@@ -42,7 +42,7 @@ TEST_F(node_fixture, connect_to_node_and_send_identify_and_discovery) {
 
     // Node A sends identify with its own port and host
     auto _data_identify = _client_a->get_builder()
-        .add_identify(node_a_->get_state()->get_node_id(), _transaction_id_identify, _port_a, "127.0.0.1")
+        .add_identify(node_a_->get_state()->get_node_id(), 1, _transaction_id_identify, _port_a, "127.0.0.1")
         .get_data();
 
     _client_a->send(_data_identify);

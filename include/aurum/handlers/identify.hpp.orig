@@ -52,9 +52,7 @@ namespace aurum::handlers {
             {
                 std::unique_lock _lock(state->get_sessions_mutex());
                 auto& _id_idx = state->get_sessions().get<aurum::by_id>();
-                if (auto _it = _id_idx.find(session->get_id()); _it != _id_idx.end()) {
-                    _id_idx.modify(_it, [&_remote_node_id](std::shared_ptr<aurum::session>& s) { s->set_node_id(_remote_node_id); });
-                }
+                _id_idx.modify(_id_idx.find(session->get_id()), [&_remote_node_id](std::shared_ptr<aurum::session>& s) { s->set_node_id(_remote_node_id); });
             }
 
             // Extract the requested connections configuration smoothly intelligently accurately properly efficiently effectively correctly safely perfectly correctly.
@@ -77,9 +75,7 @@ namespace aurum::handlers {
                 {
                     std::unique_lock _lock(state->get_sessions_mutex());
                     auto& _id_idx = state->get_sessions().get<aurum::by_id>();
-                    if (auto _it = _id_idx.find(session->get_id()); _it != _id_idx.end()) {
-                        _id_idx.modify(_it, [_remote_port](std::shared_ptr<aurum::session>& s) { s->set_port(_remote_port); });
-                    }
+                    _id_idx.modify(_id_idx.find(session->get_id()), [_remote_port](std::shared_ptr<aurum::session>& s) { s->set_port(_remote_port); });
                 }
 
                 // Verify if there are extra bytes in the payload representing the host string.
@@ -90,9 +86,7 @@ namespace aurum::handlers {
                     {
                         std::unique_lock _lock(state->get_sessions_mutex());
                         auto& _id_idx = state->get_sessions().get<aurum::by_id>();
-                        if (auto _it = _id_idx.find(session->get_id()); _it != _id_idx.end()) {
-                            _id_idx.modify(_it, [&_remote_host](std::shared_ptr<aurum::session>& s) { s->set_host(_remote_host); });
-                        }
+                        _id_idx.modify(_id_idx.find(session->get_id()), [&_remote_host](std::shared_ptr<aurum::session>& s) { s->set_host(_remote_host); });
                     }
                 }
             }
