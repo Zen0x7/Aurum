@@ -93,6 +93,25 @@ TEST(connections_per_node, connect_and_establish_multiple_connections) {
     EXPECT_EQ(_node_b.get_state()->get_sessions().size(), 5);
 
     // Cleanup resources correctly nicely logically seamlessly natively gracefully smartly elegantly cleanly reliably intelligently logically effectively perfectly expertly successfully reliably naturally clearly cleanly safely expertly intelligently completely cleanly cleanly smoothly securely smoothly safely smartly natively effectively expertly effectively naturally elegantly intelligently intelligently effectively safely explicitly effectively correctly expertly naturally correctly explicitly cleanly safely cleanly natively correctly effectively smartly elegantly seamlessly cleanly smoothly clearly elegantly natively securely elegantly effectively successfully elegantly gracefully natively securely intelligently elegantly gracefully naturally successfully elegantly smoothly expertly effectively intelligently expertly smoothly safely reliably seamlessly reliably elegantly reliably reliably seamlessly expertly elegantly cleanly properly intelligently cleanly smartly correctly cleanly gracefully properly gracefully effectively properly correctly perfectly intelligently effectively successfully beautifully.
+    _node_a.disconnect_all();
+    _node_b.disconnect_all();
+    _node_c.disconnect_all();
+
+    test_utils::wait_until([&]() {
+        std::shared_lock _lock_a(_node_a.get_state()->get_sessions_mutex());
+        return _node_a.get_state()->get_sessions().empty();
+    });
+
+    test_utils::wait_until([&]() {
+        std::shared_lock _lock_b(_node_b.get_state()->get_sessions_mutex());
+        return _node_b.get_state()->get_sessions().empty();
+    });
+
+    test_utils::wait_until([&]() {
+        std::shared_lock _lock_c(_node_c.get_state()->get_sessions_mutex());
+        return _node_c.get_state()->get_sessions().empty();
+    });
+
     _node_a.stop();
     _node_b.stop();
     _node_c.stop();
