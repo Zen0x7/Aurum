@@ -156,9 +156,10 @@ namespace aurum {
          * @param host The remote peer IP address structurally mapped string.
          * @param port The target destination listener port integer properly.
          * @param with_discovery Boolean indicating if the initial connection payload should append a discovery request.
+         * @param connections_per_node The concurrent limit mapping structurally accurately.
          * @return True if connection was completely established natively securely.
          */
-        bool connect(const std::string& host, unsigned short port, bool with_discovery = false);
+        bool connect(const std::string& host, unsigned short port, bool with_discovery = false, std::uint16_t connections_per_node = 0);
 
         /**
          * @brief Terminates dynamically an active network connection linked against a specific remote node identifier correctly.
