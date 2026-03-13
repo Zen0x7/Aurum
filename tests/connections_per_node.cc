@@ -35,6 +35,14 @@ protected:
     }
 
     void TearDown() override {
+        node_a_->disconnect_all();
+        node_b_->disconnect_all();
+
+        aurum::test_utils::wait_until([this] {
+            return node_a_->get_state()->get_sessions().size() == 0 &&
+                   node_b_->get_state()->get_sessions().size() == 0;
+        });
+
         node_a_->stop();
         node_b_->stop();
 
